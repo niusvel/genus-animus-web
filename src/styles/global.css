@@ -1,0 +1,304 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Special+Elite&family=VT323&family=Fira+Code:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Theme Configurations */
+:root {
+  /* Default: Primordial Theme (Teal/Green Bioluminescence) */
+  --color-terminal-bg: #031514;
+  --color-terminal-text: #2ee0c7;
+  --color-terminal-glow: rgba(46, 224, 199, 0.4);
+  --color-terminal-accent: #39ffd0;
+  --color-terminal-border: rgba(46, 224, 199, 0.3);
+  --color-terminal-muted: rgba(46, 224, 199, 0.6);
+  --font-terminal: 'Fira Code', monospace;
+  --crt-scanline-opacity: 0.08;
+  --screen-curvature: 8px;
+}
+
+.theme-primordial {
+  --color-terminal-bg: #031514;
+  --color-terminal-text: #2ee0c7;
+  --color-terminal-glow: rgba(46, 224, 199, 0.4);
+  --color-terminal-accent: #39ffd0;
+  --color-terminal-border: rgba(46, 224, 199, 0.3);
+  --color-terminal-muted: rgba(46, 224, 199, 0.6);
+  --font-terminal: 'Fira Code', monospace;
+  --crt-scanline-opacity: 0.07;
+  --screen-curvature: 12px;
+}
+
+.theme-humanoid {
+  /* Classic 80s Amber Phosphor Terminal */
+  --color-terminal-bg: #110700;
+  --color-terminal-text: #ff8800;
+  --color-terminal-glow: rgba(255, 136, 0, 0.5);
+  --color-terminal-accent: #ffaa00;
+  --color-terminal-border: rgba(255, 136, 0, 0.25);
+  --color-terminal-muted: rgba(255, 136, 0, 0.6);
+  --font-terminal: 'VT323', monospace;
+  --crt-scanline-opacity: 0.12;
+  --screen-curvature: 20px;
+}
+
+.theme-insectoid {
+  /* Bioluminescent Deep Chemical Purple/Magenta Alien Glow */
+  --color-terminal-bg: #12021c;
+  --color-terminal-text: #e02ebd;
+  --color-terminal-glow: rgba(224, 46, 189, 0.45);
+  --color-terminal-accent: #ff3df0;
+  --color-terminal-border: rgba(224, 46, 189, 0.3);
+  --color-terminal-muted: rgba(224, 46, 189, 0.6);
+  --font-terminal: 'Special Elite', cursive;
+  --crt-scanline-opacity: 0.15;
+  --screen-curvature: 4px;
+}
+
+.theme-android {
+  /* High-Tech Electric Blue Cyberpunk Glitch Grid */
+  --color-terminal-bg: #010a15;
+  --color-terminal-text: #00d2ff;
+  --color-terminal-glow: rgba(0, 210, 255, 0.45);
+  --color-terminal-accent: #00f0ff;
+  --color-terminal-border: rgba(0, 210, 255, 0.35);
+  --color-terminal-muted: rgba(0, 210, 255, 0.6);
+  --font-terminal: 'Share Tech Mono', monospace;
+  --crt-scanline-opacity: 0.09;
+  --screen-curvature: 0px;
+}
+
+/* CRT Screen Effects */
+body {
+  background-color: #000;
+  margin: 0;
+  font-family: var(--font-terminal);
+  overflow-x: hidden;
+  transition: background 0.5s ease-in-out;
+}
+
+.crt-container {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-terminal-bg);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.8),
+              0 0 30px var(--color-terminal-glow);
+}
+
+/* Screen overlay representing the curved glass scanline and flicker */
+.crt-screen::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  z-index: 10;
+  background-size: 100% 4px, 6px 100%;
+  pointer-events: none;
+  opacity: var(--crt-scanline-opacity);
+  transition: opacity 0.5s ease;
+}
+
+.crt-screen::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.4) 100%);
+  z-index: 11;
+  pointer-events: none;
+}
+
+/* Phosphor Text Glow */
+.glow-text {
+  text-shadow: 0 0 4px var(--color-terminal-glow),
+               0 0 12px var(--color-terminal-glow);
+  transition: text-shadow 0.5s ease;
+}
+
+.glow-border {
+  box-shadow: 0 0 10px var(--color-terminal-border),
+              inset 0 0 10px var(--color-terminal-border);
+  border-color: var(--color-terminal-accent);
+  transition: all 0.5s ease;
+}
+
+/* Scanline moving animation */
+.scanline {
+  width: 100%;
+  height: 100px;
+  background: linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(255, 255, 255, 0.05) 10%
+  );
+  opacity: 0.1;
+  position: absolute;
+  left: 0;
+  top: -100px;
+  z-index: 15;
+  pointer-events: none;
+  animation: scanline-move 8s linear infinite;
+}
+
+@keyframes scanline-move {
+  0% {
+    top: -100px;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+/* Theme breathing pulse for biological/primordial effects */
+.theme-primordial .crt-container {
+  animation: primordial-breath 6s ease-in-out infinite;
+}
+
+.theme-insectoid .crt-container {
+  animation: insectoid-pulse 2s ease-in-out infinite;
+}
+
+@keyframes primordial-breath {
+  0%, 100% {
+    box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.8), 0 0 25px rgba(46, 224, 199, 0.25);
+  }
+  50% {
+    box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(46, 224, 199, 0.45);
+  }
+}
+
+@keyframes insectoid-pulse {
+  0%, 100% {
+    box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.85), 0 0 20px rgba(224, 46, 189, 0.2);
+    filter: saturate(1);
+  }
+  50% {
+    box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.75), 0 0 40px rgba(224, 46, 189, 0.5);
+    filter: saturate(1.2);
+  }
+}
+
+/* Glitch animation details for Android theme */
+.theme-android .terminal-title {
+  animation: glitch-anim 4s steps(2, start) infinite;
+}
+
+@keyframes glitch-anim {
+  0%, 95%, 100% {
+    text-shadow: 0 0 4px var(--color-terminal-glow);
+    transform: skew(0);
+  }
+  96% {
+    text-shadow: 2px -2px #ff00ea, -2px 2px #00ffd2;
+    transform: skew(2deg);
+  }
+  97% {
+    text-shadow: -3px 2px #ff00ea, 3px -2px #00ffd2;
+    transform: skew(-3deg);
+  }
+  98% {
+    text-shadow: 1px -1px #ff00ea, -1px 1px #00ffd2;
+    transform: skew(1deg);
+  }
+}
+
+/* Custom Scrollbar for Terminal */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-terminal-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-terminal-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-terminal-accent);
+}
+
+/* Retro-Terminal Table styling */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-family: var(--font-terminal);
+  border: 1px solid var(--color-terminal-border);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.prose th {
+  color: var(--color-terminal-accent);
+  border-bottom: 2px solid var(--color-terminal-border);
+  padding: 0.75rem 1rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  background-color: rgba(0, 0, 0, 0.5);
+  text-shadow: 0 0 4px var(--color-terminal-glow);
+}
+
+.prose td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-terminal-border);
+  color: var(--color-terminal-text);
+  font-size: 0.9rem;
+  text-shadow: 0 0 2px var(--color-terminal-glow);
+}
+
+.prose tr:last-child td {
+  border-bottom: none;
+}
+
+.prose tr:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Alignment utilities for table elements */
+.prose th[align="center"], .prose td[align="center"] {
+  text-align: center;
+}
+.prose th[align="right"], .prose td[align="right"] {
+  text-align: right;
+}
+.prose th[align="left"], .prose td[align="left"] {
+  text-align: left;
+}
+
+/* Glowing commands highlighting in narratives */
+.prose code,
+.glow-command {
+  font-family: var(--font-terminal);
+  color: var(--color-terminal-accent) !important;
+  background-color: rgba(0, 0, 0, 0.55) !important;
+  border: 1px solid var(--color-terminal-border) !important;
+  padding: 0.12rem 0.4rem !important;
+  margin: 0 0.15rem !important;
+  border-radius: 4px !important;
+  font-weight: bold !important;
+  font-size: 0.98em !important;
+  text-shadow: 0 0 8px var(--color-terminal-glow), 0 0 16px var(--color-terminal-glow) !important;
+  box-shadow: 0 0 5px var(--color-terminal-border) !important;
+  display: inline-block !important;
+  line-height: 1.1 !important;
+  vertical-align: middle !important;
+  animation: pulse-glow-command 3s ease-in-out infinite !important;
+}
+
+@keyframes pulse-glow-command {
+  0%, 100% {
+    box-shadow: 0 0 3px var(--color-terminal-border);
+    text-shadow: 0 0 5px var(--color-terminal-glow), 0 0 10px var(--color-terminal-glow);
+  }
+  50% {
+    box-shadow: 0 0 8px var(--color-terminal-border), 0 0 2px var(--color-terminal-accent);
+    text-shadow: 0 0 10px var(--color-terminal-accent), 0 0 18px var(--color-terminal-glow);
+  }
+}
+
+

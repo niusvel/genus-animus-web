@@ -1,0 +1,153 @@
+{
+  "id": "cueva_enemigo",
+  "zona": "cueva_origen",
+  "nombre": "El Primer Enemigo",
+  "checkpoint": false,
+  "flags_que_requiere": ["cocoons_examined"],
+  "flags_que_otorga": ["cueva_enemigo_visitada"],
+
+  "comandos_iniciales": ["DEFENDER", "ATACAR"],
+  "comandos_desbloqueables": ["OBSERVAR", "ESCUCHAR", "EXAMINAR", "TOMAR", "SOLTAR", "EQUIPAR", "INVENTARIO", "IR"],
+
+  "objetos": [
+    {
+      "id": "criatura",
+      "nombre": "criatura",
+      "descripcion_corta": "una criatura deforme e inmóvil",
+      "tomable": false,
+      "examinable": true,
+      "usos_examinar": 1,
+      "visible_desde_inicio": false,
+      "visible_con_flag": "first_enemy_defeated",
+      "fragmentos_adn": 1
+    },
+    {
+      "id": "pezuna",
+      "nombre": "pezuña",
+      "descripcion_corta": "una pezuña endurecida y afilada",
+      "tomable": true,
+      "examinable": false,
+      "equipable": true,
+      "slot_equipo": "arma",
+      "visible_desde_inicio": false,
+      "visible_con_flag": "body_examined"
+    },
+    {
+      "id": "ganglio",
+      "nombre": "ganglio",
+      "descripcion_corta": "un ganglio nervioso viscoso",
+      "tomable": true,
+      "examinable": false,
+      "equipable": false,
+      "toxico": true,
+      "efecto_al_tomar": "dano_continuo",
+      "visible_desde_inicio": false,
+      "visible_con_flag": "body_examined"
+    }
+  ],
+
+  "enemigos": [
+    {
+      "id": "criatura_deforme",
+      "nombre": "criatura",
+      "vivo": true,
+      "bloquea_navegacion": true,
+      "flag_derrota": "first_enemy_defeated",
+      "requiere_para_atacar": null,
+      "requiere_para_defender": null
+    }
+  ],
+
+  "contadores": {},
+
+  "desbloqueos": [
+    {
+      "id": "desbloqueo_post_combate",
+      "condicion": {
+        "tipo": "flag",
+        "flag": "first_enemy_defeated"
+      },
+      "desbloquea_comandos": ["OBSERVAR", "ESCUCHAR", "EXAMINAR", "TOMAR", "INVENTARIO", "IR"],
+      "flags_que_otorga": [],
+      "texto_id": "atacar_1",
+      "se_repite": false
+    },
+    {
+      "id": "desbloqueo_objetos",
+      "condicion": {
+        "tipo": "flag",
+        "flag": "body_examined"
+      },
+      "desbloquea_comandos": ["SOLTAR", "EQUIPAR"],
+      "flags_que_otorga": [],
+      "texto_id": null,
+      "se_repite": false
+    }
+  ],
+
+  "salidas": [
+    {
+      "id": "salida_luz",
+      "comando": "IR",
+      "palabra_clave": "luz",
+      "destino": "cueva_salida",
+      "requiere_flag": "first_enemy_defeated",
+      "texto_bloqueado_id": "ir_luz_bloqueado_enemigo_vivo",
+      "texto_transicion_id": "ir_luz"
+    },
+    {
+      "id": "salida_capullos",
+      "comando": "IR",
+      "palabra_clave": "capullos",
+      "destino": "cueva_capullos",
+      "requiere_flag": "first_enemy_defeated",
+      "texto_bloqueado_id": "ir_capullos_bloqueado_enemigo_vivo",
+      "texto_transicion_id": "ir_capullos"
+    }
+  ],
+
+  "entradas": [
+    {
+      "origen": "cueva_capullos",
+      "texto_llegada_id": "llegada"
+    },
+    {
+      "origen": "cueva_salida",
+      "texto_llegada_id": "llegada_tras_derrota"
+    }
+  ],
+
+  "logica_observar": {
+    "enemigo_vivo": "observar_enemigo_vivo",
+    "cadaver_sin_examinar": "observar_cadaver_sin_examinar",
+    "cadaver_examinado_con_objetos": "observar_cadaver_examinado_con_objetos",
+    "cadaver_examinado_sin_objetos": "observar_cadaver_examinado_sin_objetos"
+  },
+
+  "logica_escuchar": {
+    "enemigo_vivo": "escuchar_enemigo_vivo",
+    "tras_derrota": "escuchar_tras_derrota"
+  },
+
+  "logica_defender": {
+    "primera_vez": "defender_1",
+    "repetido": "defender_repetido"
+  },
+
+  "logica_examinar": {
+    "criatura_sin_examinar": "examinar_criatura_sin_examinar",
+    "criatura_ya_examinada": "examinar_criatura_ya_examinada",
+    "flag_que_otorga": "body_examined"
+  },
+
+  "logica_tomar": {
+    "pezuna": "tomar_pezuna",
+    "pezuna_duplicado": "tomar_pezuna_duplicado",
+    "ganglio": "tomar_ganglio"
+  },
+
+  "logica_soltar": {
+    "ganglio": "soltar_ganglio",
+    "ganglio_no_en_inventario": "soltar_ganglio_no_en_inventario"
+  }
+}

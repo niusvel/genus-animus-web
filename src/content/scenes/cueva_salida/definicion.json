@@ -1,0 +1,123 @@
+{
+  "id": "cueva_salida",
+  "zona": "cueva_origen",
+  "nombre": "La Salida",
+  "checkpoint": false,
+  "flags_que_requiere": [
+    "first_enemy_defeated"
+  ],
+  "flags_que_otorga": [
+    "cueva_salida_visitada"
+  ],
+  "comandos_iniciales": [
+    "DESCANSAR",
+    "ESCUCHAR",
+    "INVENTARIO"
+  ],
+  "comandos_desbloqueables": [
+    "OBSERVAR",
+    "ESTADO",
+    "INVESTIGAR",
+    "CANCELAR",
+    "IR"
+  ],
+  "objetos": [],
+  "contadores": {},
+  "desbloqueos": [
+    {
+      "id": "desbloqueo_post_descanso",
+      "condicion": {
+        "tipo": "flag",
+        "flag": "first_rest_completed"
+      },
+      "desbloquea_comandos": [
+        "OBSERVAR",
+        "ESTADO",
+        "INVESTIGAR",
+        "CANCELAR",
+        "MUTAR"
+      ],
+      "flags_que_otorga": [],
+      "texto_id": null,
+      "se_repite": false
+    },
+    {
+      "id": "desbloqueo_ir_exterior",
+      "condicion": {
+        "tipo": "flag",
+        "flag": "first_mutation_completed"
+      },
+      "desbloquea_comandos": [
+        "IR"
+      ],
+      "flags_que_otorga": [],
+      "texto_id": "mutacion_completada",
+      "se_repite": false
+    }
+  ],
+  "salidas": [
+    {
+      "id": "ir_sendero",
+      "comando": "IR",
+      "palabra_clave": "sendero",
+      "destino": "bosque_amanecer",
+      "requiere_flag": "first_mutation_completed",
+      "texto_bloqueado_antes_descanso_id": "ir_sendero_bloqueado_antes_descanso",
+      "texto_bloqueado_sin_mutar_id": "ir_sendero_bloqueado_sin_mutar",
+      "texto_transicion_id": "ir_sendero"
+    },
+    {
+      "id": "salida_cueva",
+      "comando": "IR",
+      "palabra_clave": "cueva",
+      "destino": "cueva_enemigo",
+      "requiere_flag": null,
+      "texto_bloqueado_id": null,
+      "texto_transicion_id": "ir_cueva"
+    }
+  ],
+  "entradas": [
+    {
+      "origen": "cueva_enemigo",
+      "texto_llegada_id": "llegada"
+    },
+    {
+      "origen": "bosque_amanecer",
+      "texto_llegada_id": "llegada_regreso"
+    }
+  ],
+  "logica_descansar": {
+    "primera_vez": "descansar_1",
+    "repetido": "descansar_repetido",
+    "flag_que_otorga": "first_rest_completed"
+  },
+  "logica_observar": {
+    "antes_descanso": "observar_antes_descanso",
+    "tras_descanso_sin_mutar": "observar_tras_descanso_sin_mutar",
+    "tras_mutar": "observar_tras_mutar"
+  },
+  "logica_escuchar": {
+    "antes_descanso": "escuchar_antes_descanso",
+    "tras_descanso": "escuchar_tras_descanso"
+  },
+  "logica_estado": {
+    "tras_descanso_antes_mutar": "estado_tras_descanso"
+  },
+  "logica_investigar": {
+    "disponible": "investigar_disponible",
+    "sin_fragmentos": "investigar_sin_fragmentos"
+  },
+  "logica_mutacion": {
+    "completada": "mutacion_completada",
+    "flag_que_otorga": "first_mutation_completed"
+  },
+  "logica_cancelar": {
+    "investigacion": "cancelar_investigacion"
+  },
+  "logica_ir": {
+    "exterior_antes_descanso": "ir_exterior_bloqueado_antes_descanso",
+    "exterior_sin_mutar": "ir_exterior_bloqueado_sin_mutar",
+    "exterior": "ir_exterior",
+    "cueva": "ir_cueva"
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "id": "cueva_capullos",
+  "zona": "cueva_origen",
+  "nombre": "Los Nueve Capullos",
+  "checkpoint": false,
+  "flags_que_requiere": [],
+  "flags_que_otorga": ["cueva_capullos_visitada"],
+
+  "comandos_iniciales": ["ESCUCHAR", "AYUDA"],
+  "comandos_desbloqueables": ["OBSERVAR", "EXAMINAR", "FRAGMENTOS", "IR"],
+
+  "objetos": [
+    {
+      "id": "capullos",
+      "nombre": "capullos",
+      "descripcion_corta": "nueve capullos inmóviles distribuidos en la penumbra",
+      "tomable": false,
+      "examinable": true,
+      "usos_examinar": 1,
+      "fragmentos_adn": 9,
+      "visible_desde_inicio": false,
+      "visible_con_flag": "observing"
+    }
+  ],
+
+  "contadores": {},
+
+  "desbloqueos": [
+    {
+      "id": "desbloqueo_observar",
+      "condicion": {
+        "tipo": "flag",
+        "flag": "cocoon_broken"
+      },
+      "desbloquea_comandos": ["OBSERVAR"],
+      "texto_id": null,
+      "se_repite": false
+    },
+    {
+      "id": "desbloqueo_examinar",
+      "condicion": {
+        "tipo": "flag",
+        "flag": "observing"
+      },
+      "desbloquea_comandos": ["EXAMINAR", "FRAGMENTOS"],
+      "texto_id": null,
+      "se_repite": false
+    },
+    {
+      "id": "desbloqueo_ir",
+      "condicion": {
+        "tipo": "flag",
+        "flag": "cocoons_examined"
+      },
+      "desbloquea_comandos": ["IR"],
+      "flags_que_otorga": [],
+      "texto_id": null,
+      "se_repite": false
+    }
+  ],
+
+  "salidas": [
+    {
+      "id": "salida_luz",
+      "comando": "IR",
+      "palabra_clave": "luz",
+      "destino": "cueva_enemigo",
+      "requiere_flag": "cocoons_examined",
+      "texto_bloqueado_id": "ir_luz_bloqueado",
+      "texto_transicion_id": "ir_luz"
+    }
+  ],
+
+  "entradas": [
+    {
+      "origen": "cueva_enemigo",
+      "texto_llegada_id": "llegada_regreso"
+    }
+  ],
+
+  "logica_observar": {
+    "sin_flag_observing": "observar_sin_examinar",
+    "capullos_no_examinados": "observar_sin_examinar",
+    "capullos_examinados": "observar_todo_examinado",
+    "flag_que_otorga": "observing"
+  },
+
+  "logica_escuchar": {
+    "primera_vez": "escuchar_1",
+    "repetido": "escuchar_repetido",
+    "flag_que_otorga": "cocoon_broken"
+  },
+
+  "logica_examinar": {
+    "capullos_disponible": "examinar_capullos",
+    "capullos_agotado": "examinar_capullos_agotado",
+    "flag_que_otorga": "cocoons_examined"
+  }
+}
