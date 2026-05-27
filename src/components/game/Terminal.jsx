@@ -64,7 +64,12 @@ export const Terminal = ({ textHistory, currentSceneBody, isLoading }) => {
 
   // Scroll to bottom when text history changes
   const scrollToBottom = () => {
-    terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (containerRef.current) {
+      containerRef.current.scrollTo({
+        top: containerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
   };
 
   useEffect(() => {

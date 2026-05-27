@@ -30,7 +30,7 @@ export const CommandInput = ({ onExecute, disabled }) => {
     <form
       onSubmit={handleSubmit}
       onClick={handleContainerClick}
-      className="flex items-center border-t border-terminal-border p-4 bg-black/40 glow-border flex-shrink-0 h-14 md:h-16"
+      className="flex items-center border-t border-terminal-border/50 p-4 bg-black/40 flex-shrink-0 h-14 md:h-16 relative z-10"
     >
       <span className="text-terminal-accent font-terminal font-bold text-lg md:text-xl mr-3 glow-text select-none animate-pulse-slow">
         &gt;
