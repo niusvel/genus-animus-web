@@ -36,7 +36,7 @@ export const StatusBar = ({ genes, dnaFragments, dominantPhenotype }) => {
   const multiplier = collectiveMemory * 10;
 
   return (
-    <div className="flex flex-col h-full bg-black/50 p-4 border-l border-terminal-border flex-shrink-0 w-full lg:w-80 glow-border font-terminal text-terminal-text space-y-6">
+    <div className="flex flex-col h-full bg-black/50 p-4 lg:border-l border-terminal-border flex-shrink-0 w-full lg:w-80 glow-border font-terminal text-terminal-text space-y-6 overflow-y-auto min-h-0">
       
       {/* Phenotype Panel */}
       <div className="border border-terminal-border p-3 bg-black/60 rounded glow-border">

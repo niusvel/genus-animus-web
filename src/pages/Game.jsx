@@ -11,6 +11,7 @@ export const Game = () => {
   const game = useGame();
   const { executeCommand } = useCommands();
   const [showCheckpointModal, setShowCheckpointModal] = useState(false);
+  const [showStatsMobile, setShowStatsMobile] = useState(false);
 
   // Initialize game on mount
   useEffect(() => {
@@ -45,8 +46,8 @@ export const Game = () => {
   const activeThemeClass = getThemeFromPhenotype(game.dominantPhenotype);
 
   return (
-    <div className={`min-h-screen bg-black flex items-center justify-center p-0 md:p-4 transition-all duration-500 ${activeThemeClass}`}>
-      <div className="w-full max-w-7xl h-screen md:h-[90vh] flex flex-col crt-container glow-border overflow-hidden md:rounded-lg border border-terminal-border bg-terminal-bg">
+    <div className={`min-h-[100dvh] bg-black flex items-center justify-center p-0 md:p-4 transition-all duration-500 ${activeThemeClass}`}>
+      <div className="w-full max-w-7xl h-[100dvh] md:h-[90vh] flex flex-col crt-container glow-border overflow-hidden md:rounded-lg border border-terminal-border bg-terminal-bg">
         {/* CRT Scanline and curvature overlays */}
         <div className="scanline"></div>
         
@@ -104,24 +105,34 @@ export const Game = () => {
                 </button>
               </>
             )}
+            <button
+              onClick={() => setShowStatsMobile(!showStatsMobile)}
+              className="lg:hidden px-2 py-1 border border-terminal-border hover:border-terminal-accent/50 hover:text-terminal-accent rounded cursor-pointer transition-colors duration-300 text-[10px] md:text-xs"
+            >
+              {showStatsMobile ? 'TERMINAL' : 'ESTADO'}
+            </button>
           </div>
         </header>
 
         {/* Main Workspace */}
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
           {/* Narrative Terminal screen */}
-          <Terminal 
-            textHistory={game.textHistory}
-            currentSceneBody={game.sceneData?.body}
-            isLoading={game.isLoading}
-          />
+          <div className={`flex-1 flex flex-col overflow-hidden min-h-0 ${showStatsMobile ? 'hidden lg:flex' : 'flex'}`}>
+            <Terminal 
+              textHistory={game.textHistory}
+              currentSceneBody={game.sceneData?.body}
+              isLoading={game.isLoading}
+            />
+          </div>
 
           {/* Stats Readout Panel */}
-          <StatusBar 
-            genes={game.genes}
-            dnaFragments={game.dnaFragments}
-            dominantPhenotype={game.dominantPhenotype}
-          />
+          <div className={`lg:flex ${showStatsMobile ? 'flex flex-1 overflow-hidden min-h-0' : 'hidden'} lg:w-80`}>
+            <StatusBar 
+              genes={game.genes}
+              dnaFragments={game.dnaFragments}
+              dominantPhenotype={game.dominantPhenotype}
+            />
+          </div>
         </div>
 
         {/* Command Line Input */}

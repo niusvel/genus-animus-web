@@ -30,7 +30,7 @@ export const CommandInput = ({ onExecute, disabled }) => {
     <form
       onSubmit={handleSubmit}
       onClick={handleContainerClick}
-      className="flex items-center border-t border-terminal-border p-4 bg-black/40 glow-border"
+      className="flex items-center border-t border-terminal-border p-4 bg-black/40 glow-border flex-shrink-0 h-14 md:h-16"
     >
       <span className="text-terminal-accent font-terminal font-bold text-lg md:text-xl mr-3 glow-text select-none animate-pulse-slow">
         &gt;
@@ -42,14 +42,11 @@ export const CommandInput = ({ onExecute, disabled }) => {
         onChange={(e) => setInputValue(e.target.value)}
         disabled={disabled}
         placeholder={disabled ? "Sincronizando..." : "Escribe un comando... (ej. AYUDA)"}
-        className="flex-1 bg-transparent border-none outline-none font-terminal text-terminal-text placeholder-terminal-muted/40 glow-text text-sm md:text-base selection:bg-terminal-border focus:ring-0 focus:outline-none w-full"
+        className="flex-1 h-full bg-transparent border-none outline-none font-terminal text-terminal-text placeholder-terminal-muted/40 glow-text text-sm md:text-base selection:bg-terminal-border focus:ring-0 focus:outline-none w-full"
         autoComplete="off"
         autoCapitalize="off"
         spellCheck="false"
       />
-      {inputValue.length === 0 && !disabled && (
-        <span className="w-2.5 h-5 bg-terminal-text animate-cursor-blink mr-auto ml-1"></span>
-      )}
     </form>
   );
 };
