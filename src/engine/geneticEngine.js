@@ -189,10 +189,71 @@ export const getThemeFromPhenotype = (phenotype) => {
   return 'theme-primordial';
 };
 
+export const updateMorphologyState = (phenotype, currentState) => {
+  let state = currentState;
+  if (!state) {
+    state = {
+      ramaBloqueada: null,
+      puntosEstructuralesGanados: 0,
+      puntosEstructuralesGastados: 0,
+      puntosRefuerzoGanados: 0,
+      puntosRefuerzoGastados: 0,
+      partes: { piernas: 0, brazos: 0, cuernos: 0, piel: false, patas: 0, alas: 0, caparazon: false },
+      refuerzos: { piernas: 0, brazos: 0, cuernos: 0, piel: false, patas: 0, alas: 0, caparazon: false }
+    };
+  } else {
+    state = JSON.parse(JSON.stringify(currentState));
+  }
+
+  const lower = phenotype.toLowerCase();
+  let base = null;
+  if (lower.includes('humanoide')) base = 'Humanoide';
+  else if (lower.includes('insectoide')) base = 'Insectoide';
+  else if (lower.includes('androide')) base = 'Androide';
+
+  if (!base) return state;
+
+  let grade = 0;
+  if (lower.includes('emergente')) grade = 1;
+  else if (lower.includes('consolidado')) grade = 2;
+  else if (lower.includes('avanzado')) grade = 3;
+  else if (lower.includes('pleno') || lower.includes('supremo')) grade = 5;
+  else grade = 4; // Adaptado, Integrado, Pensante, Sintetico, Organico, Enjambre
+
+  const expectedPoints = Math.max(0, grade - 1);
+
+  if (base === 'Androide') {
+    if (expectedPoints > state.puntosRefuerzoGanados) {
+      state.puntosRefuerzoGanados = expectedPoints;
+    }
+  } else {
+    if (state.ramaBloqueada && state.ramaBloqueada !== base) {
+      // Radical Change Reset
+      state.ramaBloqueada = base;
+      state.puntosEstructuralesGanados = expectedPoints;
+      state.puntosEstructuralesGastados = 0;
+      state.partes = { piernas: 0, brazos: 0, cuernos: 0, piel: false, patas: 0, alas: 0, caparazon: false };
+      state.puntosRefuerzoGanados = 0;
+      state.puntosRefuerzoGastados = 0;
+      state.refuerzos = { piernas: 0, brazos: 0, cuernos: 0, piel: false, patas: 0, alas: 0, caparazon: false };
+    } else {
+      if (!state.ramaBloqueada && grade >= 2) {
+        state.ramaBloqueada = base;
+      }
+      if (state.ramaBloqueada === base && expectedPoints > state.puntosEstructuralesGanados) {
+        state.puntosEstructuralesGanados = expectedPoints;
+      }
+    }
+  }
+
+  return state;
+};
+
 export default {
   ANTAGONISTS,
   getMutationDetails,
   mutateGene,
   calculatePhenotype,
-  getThemeFromPhenotype
+  getThemeFromPhenotype,
+  updateMorphologyState
 };

@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { marked } from 'marked';
+import GlitchText from './GlitchText';
+import PhenotypeIcon from './PhenotypeIcon';
 
 // Configure marked options to be safe
 marked.setOptions({
@@ -57,7 +59,7 @@ const TypewriterText = ({ text, speed = 8, onComplete }) => {
   );
 };
 
-export const Terminal = ({ textHistory, currentSceneBody, isLoading }) => {
+export const Terminal = ({ textHistory, currentSceneBody, isLoading, isGlitching, dominantPhenotype, morfologia }) => {
   const terminalEndRef = useRef(null);
   const containerRef = useRef(null);
   const [typingIndex, setTypingIndex] = useState(-1);
@@ -92,21 +94,43 @@ export const Terminal = ({ textHistory, currentSceneBody, isLoading }) => {
       <div className="scanline"></div>
       
       {/* Intro branding */}
-      <div className="opacity-60 text-xs md:text-sm border-b border-terminal-border pb-2 mb-4">
-        <div>SYSTEM STATUS: ACTIVE // BIO-VECTORS INITIALIZED</div>
-        <div>PROT-CORE v0.98.24 // SECURE CONNECTION</div>
+      <div className="flex justify-between items-center border-b border-terminal-border pb-2 mb-4">
+        <div className="opacity-60 text-xs md:text-sm">
+          <div>SYSTEM STATUS: ACTIVE // BIO-VECTORS INITIALIZED</div>
+          <div>PROT-CORE v0.98.24 // SECURE CONNECTION</div>
+        </div>
+        {dominantPhenotype && (
+          <div className="opacity-80">
+            <PhenotypeIcon 
+              phenotype={dominantPhenotype} 
+              morfologia={morfologia} 
+              className="w-8 h-8 md:w-10 md:h-10 text-terminal-accent"
+            />
+          </div>
+        )}
       </div>
 
       {/* Render Text History */}
       {textHistory.map((item, index) => {
         if (item.type === 'input') {
           return (
-            <div key={index} className="flex items-start text-terminal-accent font-semibold mb-2">
+            <div key={index} className={`flex items-start text-terminal-accent font-semibold mb-2 ${isGlitching ? 'jitter-bar' : ''}`}>
               <span className="mr-2">&gt;</span>
-              <span className="glow-text tracking-wide uppercase">{item.text}</span>
+              <span className="glow-text tracking-wide uppercase">
+                <GlitchText text={item.text} active={isGlitching} />
+              </span>
             </div>
           );
         } else {
+          // Si estamos en glitch, renderizamos texto crudo corrupto ignorando el markdown
+          if (isGlitching) {
+            return (
+              <div key={index} className="prose prose-invert max-w-none text-terminal-text glow-text leading-relaxed text-sm md:text-base mb-4 jitter-bar">
+                <GlitchText text={item.text} active={true} />
+              </div>
+            );
+          }
+
           // If it is the last item and is an output, we can typewrite it
           const isLatest = index === typingIndex;
           if (isLatest) {

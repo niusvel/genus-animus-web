@@ -86,16 +86,17 @@ export const useGameStore = create((set, get) => ({
     }
 
     // Fallback: Local offline state from localStorage
-    const local = loadState();
+    const localData = loadState();
     set({
-      currentScene: local.currentScene,
-      dominantPhenotype: local.dominantPhenotype,
-      dnaFragments: local.dnaFragments,
-      genes: local.genes,
-      inventory: local.inventory,
-      flags: local.flags,
-      textHistory: local.textHistory,
-      defeatedEnemies: local.defeatedEnemies,
+      currentScene: localData.currentScene,
+      dominantPhenotype: localData.dominantPhenotype,
+      dnaFragments: localData.dnaFragments,
+      genes: localData.genes,
+      inventory: localData.inventory || [],
+      flags: localData.flags || {},
+      morfologia: localData.morfologia || null,
+      textHistory: localData.textHistory || [],
+      defeatedEnemies: localData.defeatedEnemies,
     });
   },
 
@@ -111,6 +112,7 @@ export const useGameStore = create((set, get) => ({
         genes: newState.genes,
         inventory: newState.inventory,
         flags: newState.flags,
+        morfologia: newState.morfologia,
         textHistory: newState.textHistory,
         defeatedEnemies: newState.defeatedEnemies,
       };
@@ -275,6 +277,7 @@ export const useGameStore = create((set, get) => ({
       genes: { ...INITIAL_STATE.genes },
       inventory: [...INITIAL_STATE.inventory],
       flags: { ...INITIAL_STATE.flags },
+      morfologia: INITIAL_STATE.morfologia,
       textHistory: [],
       defeatedEnemies: INITIAL_STATE.defeatedEnemies,
       activeSceneContent: { metadata: {}, body: '' },
@@ -283,7 +286,7 @@ export const useGameStore = create((set, get) => ({
   },
 
   saveCheckpointAction: async () => {
-    const { token, currentScene, defeatedEnemies, genes, dnaFragments, dominantPhenotype, inventory, flags } = get();
+    const { token, currentScene, defeatedEnemies, genes, dnaFragments, dominantPhenotype, morfologia, inventory, flags } = get();
     if (!token) return { error: 'unauthenticated' };
 
     try {
@@ -299,6 +302,7 @@ export const useGameStore = create((set, get) => ({
           genes,
           dna_fragments: dnaFragments,
           dominant_phenotype: dominantPhenotype,
+          morfologia,
           inventory,
           flags
         })
@@ -369,6 +373,7 @@ export const useGameStore = create((set, get) => ({
           },
           inventory: data.inventario || [],
           flags: data.flags || {},
+          morfologia: data.morfologia || null,
           defeatedEnemies: data.enemigos_derrotados || 1,
           textHistory: []
         });
@@ -390,6 +395,7 @@ export const useGameStore = create((set, get) => ({
           },
           inventory: data.inventario || [],
           flags: data.flags || {},
+          morfologia: data.morfologia || null,
           textHistory: [],
           defeatedEnemies: data.enemigos_derrotados || 1,
         };

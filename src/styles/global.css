@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Special+Elite&family=VT323&family=Fira+Code:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&family=Fira+Code:wght@400;700&family=Share+Tech+Mono&family=Special+Elite&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,68 +6,99 @@
 
 /* Theme Configurations */
 :root {
-  /* Default: Primordial Theme (Teal/Green Bioluminescence) */
-  --color-terminal-bg: #031514;
-  --color-terminal-text: #2ee0c7;
-  --color-terminal-glow: rgba(46, 224, 199, 0.4);
-  --color-terminal-accent: #39ffd0;
-  --color-terminal-border: rgba(46, 224, 199, 0.3);
-  --color-terminal-muted: rgba(46, 224, 199, 0.6);
+  /* Default palette (Primordial Despertado) */
+  --ga-bg:      #07100a;
+  --ga-border:  #144020;
+  --ga-title:   #1e6030;
+  --ga-accent:  #2e8a45;
+  --ga-text:    #48c068;
+
+  /* Map new variables to old system */
+  --color-terminal-bg: var(--ga-bg);
+  --color-terminal-border: var(--ga-border);
+  --color-terminal-accent: var(--ga-accent);
+  --color-terminal-text: var(--ga-text);
+  --color-terminal-glow: color-mix(in srgb, var(--ga-accent) 40%, transparent);
+  --color-terminal-muted: color-mix(in srgb, var(--ga-text) 60%, transparent);
+  
   --font-terminal: 'Fira Code', monospace;
   --crt-scanline-opacity: 0.08;
   --screen-curvature: 8px;
 }
 
-.theme-primordial {
-  --color-terminal-bg: #031514;
-  --color-terminal-text: #2ee0c7;
-  --color-terminal-glow: rgba(46, 224, 199, 0.4);
-  --color-terminal-accent: #39ffd0;
-  --color-terminal-border: rgba(46, 224, 199, 0.3);
-  --color-terminal-muted: rgba(46, 224, 199, 0.6);
+[data-phenotype] {
+  --color-terminal-bg: var(--ga-bg);
+  --color-terminal-border: var(--ga-border);
+  --color-terminal-accent: var(--ga-accent);
+  --color-terminal-text: var(--ga-text);
+  --color-terminal-glow: color-mix(in srgb, var(--ga-accent) 40%, transparent);
+  --color-terminal-muted: color-mix(in srgb, var(--ga-text) 60%, transparent);
+}
+
+[data-phenotype^="primordial"] {
   --font-terminal: 'Fira Code', monospace;
   --crt-scanline-opacity: 0.07;
   --screen-curvature: 12px;
 }
 
-.theme-humanoid {
-  /* Classic 80s Amber Phosphor Terminal */
-  --color-terminal-bg: #110700;
-  --color-terminal-text: #ff8800;
-  --color-terminal-glow: rgba(255, 136, 0, 0.5);
-  --color-terminal-accent: #ffaa00;
-  --color-terminal-border: rgba(255, 136, 0, 0.25);
-  --color-terminal-muted: rgba(255, 136, 0, 0.6);
-  --font-terminal: 'VT323', monospace;
+[data-phenotype^="humanoide"] {
+  --font-terminal: 'DotGothic16', sans-serif;
   --crt-scanline-opacity: 0.12;
   --screen-curvature: 20px;
 }
 
-.theme-insectoid {
-  /* Bioluminescent Deep Chemical Purple/Magenta Alien Glow */
-  --color-terminal-bg: #12021c;
-  --color-terminal-text: #e02ebd;
-  --color-terminal-glow: rgba(224, 46, 189, 0.45);
-  --color-terminal-accent: #ff3df0;
-  --color-terminal-border: rgba(224, 46, 189, 0.3);
-  --color-terminal-muted: rgba(224, 46, 189, 0.6);
+[data-phenotype^="insectoide"] {
   --font-terminal: 'Special Elite', cursive;
   --crt-scanline-opacity: 0.15;
   --screen-curvature: 4px;
 }
 
-.theme-android {
-  /* High-Tech Electric Blue Cyberpunk Glitch Grid */
-  --color-terminal-bg: #010a15;
-  --color-terminal-text: #00d2ff;
-  --color-terminal-glow: rgba(0, 210, 255, 0.45);
-  --color-terminal-accent: #00f0ff;
-  --color-terminal-border: rgba(0, 210, 255, 0.35);
-  --color-terminal-muted: rgba(0, 210, 255, 0.6);
+[data-phenotype^="androide"] {
   --font-terminal: 'Share Tech Mono', monospace;
   --crt-scanline-opacity: 0.09;
   --screen-curvature: 0px;
 }
+
+/* --- Paletas por Rama Evolutiva --- */
+
+/* 1- Primordiales */
+[data-phenotype^="primordial"] {
+  --ga-bg:      #07100a;
+  --ga-border:  #144020;
+  --ga-title:   #1e6030;
+  --ga-accent:  #2e8a45;
+  --ga-text:    #48c068;
+}
+
+/* 2- Humanoides */
+[data-phenotype^="humanoide"] {
+  --ga-bg:      #140d08;
+  --ga-border:  #382212;
+  --ga-title:   #603b22;
+  --ga-accent:  #c26f30;
+  --ga-text:    #e8bda0;
+}
+
+/* 3- Insectoides */
+[data-phenotype^="insectoide"] {
+  --ga-bg:      #0e0d06;
+  --ga-border:  #383008;
+  --ga-title:   #685808;
+  --ga-accent:  #988010;
+  --ga-text:    #d8b820;
+}
+
+/* 4- Androides */
+[data-phenotype^="androide"] {
+  --ga-bg:      #070c10;
+  --ga-border:  #103040;
+  --ga-title:   #185868;
+  --ga-accent:  #208898;
+  --ga-text:    #38c0d0;
+}
+
+
+/* --- Fin de Paletas --- */
 
 /* CRT Screen Effects */
 body {
@@ -77,6 +108,35 @@ body {
   overflow-x: hidden;
   transition: background 0.5s ease-in-out;
 }
+
+.font-mono {
+  overflow: hidden;
+}
+
+/* --- Glitch / Phenotype Transition Effects --- */
+
+@keyframes scanline-wave {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+.animate-scanline-wave {
+  animation: scanline-wave 2s linear infinite;
+}
+
+@keyframes jitter-bar {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(2px); }
+  60% { transform: translateX(-1px); }
+  80% { transform: translateX(3px); }
+  100% { transform: translateX(0); }
+}
+
+.glitch-active .jitter-bar {
+  animation: jitter-bar 0.2s infinite;
+}
+
 
 .crt-container {
   position: relative;
@@ -113,9 +173,34 @@ body {
 
 /* Phosphor Text Glow */
 .glow-text {
-  text-shadow: 0 0 4px var(--color-terminal-glow),
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9),
+               0 0 4px var(--color-terminal-glow),
                0 0 12px var(--color-terminal-glow);
   transition: text-shadow 0.5s ease;
+}
+
+/* Evitar el "faux-bold" (falsa negrita) del navegador en fuentes pixeladas y añadir latido */
+[data-phenotype^="humanoide"] .font-bold, [data-phenotype^="humanoide"] .font-semibold,
+[data-phenotype^="insectoide"] .font-bold, [data-phenotype^="insectoide"] .font-semibold,
+[data-phenotype^="androide"] .font-bold, [data-phenotype^="androide"] .font-semibold {
+  font-weight: normal !important;
+  letter-spacing: 0.05em;
+}
+
+/* Aplicar el latido a todos los fenotipos para los textos resaltados */
+[data-phenotype] .font-bold, [data-phenotype] .font-semibold {
+  animation: text-heartbeat 3s ease-in-out infinite;
+}
+
+@keyframes text-heartbeat {
+  0%, 100% {
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9), 0 0 4px var(--color-terminal-glow);
+    filter: brightness(1);
+  }
+  50% {
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9), 0 0 15px var(--color-terminal-accent), 0 0 25px var(--color-terminal-accent);
+    filter: brightness(1.4) saturate(1.2);
+  }
 }
 
 .glow-border {
@@ -181,7 +266,73 @@ body {
   }
 }
 
-/* Glitch animation details for Android theme */
+/* ---------------------------------
+   ANIMACIONES DE TÍTULO POR FENOTIPO
+   --------------------------------- */
+
+/* 1. Primordiales: Latido latente (Bio-orgánico profundo) */
+.theme-primordial .terminal-title {
+  animation: primordial-pulse 4s ease-in-out infinite;
+}
+
+@keyframes primordial-pulse {
+  0%, 100% {
+    text-shadow: 0 0 4px var(--color-terminal-glow);
+    filter: brightness(1);
+  }
+  50% {
+    text-shadow: 0 0 15px var(--color-terminal-accent), 0 0 25px var(--color-terminal-accent);
+    filter: brightness(1.3);
+  }
+}
+
+/* 2. Humanoides: Patrón simétrico (Desdoblamiento / Ghosting holográfico) */
+.theme-humanoid .terminal-title {
+  animation: humanoid-symmetry 4s ease-in-out infinite;
+}
+
+@keyframes humanoid-symmetry {
+  0%, 100% {
+    text-shadow: 0 0 4px var(--color-terminal-glow);
+    filter: brightness(1);
+  }
+  50% {
+    /* El resplandor se divide simétricamente a la izquierda y derecha creando un 'fantasma' */
+    text-shadow: -8px 0 4px var(--color-terminal-accent), 8px 0 4px var(--color-terminal-accent);
+    filter: brightness(1.3);
+  }
+}
+
+/* 3. Insectoides: Comportamiento nervioso/instintivo (Espasmos rápidos y erráticos) */
+.theme-insectoid .terminal-title {
+  animation: insectoid-twitch 3s infinite;
+  display: inline-block; /* Requerido para transformaciones físicas */
+}
+
+@keyframes insectoid-twitch {
+  0%, 90%, 100% { 
+    transform: translate(0, 0); 
+    text-shadow: 0 0 4px var(--color-terminal-glow); 
+  }
+  91% { 
+    transform: translate(-2px, 1px); 
+    text-shadow: 2px -1px 8px var(--color-terminal-accent); 
+  }
+  93% { 
+    transform: translate(1px, -2px) scale(0.98); 
+    text-shadow: -2px 1px 4px var(--color-terminal-accent); 
+  }
+  95% { 
+    transform: translate(-1px, 2px) scale(1.02); 
+    text-shadow: 1px -2px 8px var(--color-terminal-accent); 
+  }
+  97% { 
+    transform: translate(2px, -1px); 
+    text-shadow: -1px 2px 4px var(--color-terminal-accent); 
+  }
+}
+
+/* 4. Androides: Glitch digital (El que ya estaba) */
 .theme-android .terminal-title {
   animation: glitch-anim 4s steps(2, start) infinite;
 }

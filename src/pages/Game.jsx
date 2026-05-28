@@ -5,18 +5,69 @@ import Terminal from '../components/game/Terminal';
 import CommandInput from '../components/game/CommandInput';
 import StatusBar from '../components/game/StatusBar';
 import Register from './Register';
-import { getThemeFromPhenotype } from '../engine/phenotypeCalculator';
+import { getThemeFromPhenotype, getPhenotypeId } from '../engine/phenotypeCalculator';
+import PhenotypeTransition from '../components/game/PhenotypeTransition';
+import MorphologyModal from '../components/game/MorphologyModal';
+import PhenotypeIcon from '../components/game/PhenotypeIcon';
 
 export const Game = () => {
   const game = useGame();
   const { executeCommand } = useCommands();
   const [showCheckpointModal, setShowCheckpointModal] = useState(false);
   const [showStatsMobile, setShowStatsMobile] = useState(false);
+  const [isGlitching, setIsGlitching] = useState(false);
+
+  // Transition state
+  const [currentPhenotype, setCurrentPhenotype] = useState(null);
+  const [transitionData, setTransitionData] = useState(null);
+  const [showMorphologyModal, setShowMorphologyModal] = useState(false);
 
   // Initialize game on mount
   useEffect(() => {
     game.initializeGame();
   }, []);
+
+  // Sync phenotype initially and detect changes
+  useEffect(() => {
+    if (game.dominantPhenotype) {
+      if (!currentPhenotype) {
+        // Initial set
+        setCurrentPhenotype(game.dominantPhenotype);
+        document.documentElement.setAttribute('data-phenotype', getPhenotypeId(game.dominantPhenotype));
+      } else if (game.dominantPhenotype !== currentPhenotype && !transitionData) {
+        // Phenotype changed, trigger transition!
+        const nameParts = game.dominantPhenotype.split('_');
+        const formattedName = nameParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+        
+        setTransitionData({
+          oldPhenotype: currentPhenotype,
+          newPhenotype: game.dominantPhenotype,
+          name: formattedName
+        });
+      }
+    }
+  }, [game.dominantPhenotype, currentPhenotype, transitionData]);
+
+  // Check for available morphology points
+  useEffect(() => {
+    if (transitionData) {
+      setShowMorphologyModal(false);
+      return;
+    }
+
+    if (game.morfologia && game.dominantPhenotype) {
+      const { puntosEstructuralesGanados, puntosEstructuralesGastados, puntosRefuerzoGanados, puntosRefuerzoGastados } = game.morfologia;
+      const isAndroid = game.dominantPhenotype.toLowerCase().includes('androide');
+      
+      let shouldShow = false;
+      if (isAndroid && puntosRefuerzoGanados > puntosRefuerzoGastados) shouldShow = true;
+      if (!isAndroid && puntosEstructuralesGanados > puntosEstructuralesGastados) shouldShow = true;
+      
+      setShowMorphologyModal(shouldShow);
+    } else {
+      setShowMorphologyModal(false);
+    }
+  }, [transitionData, game.morfologia, game.dominantPhenotype]);
 
   const handleRegistrationComplete = () => {
     const updatedFlags = { ...game.flags, triggerRegistration: false };
@@ -43,11 +94,15 @@ export const Game = () => {
     );
   }
 
-  const activeThemeClass = getThemeFromPhenotype(game.dominantPhenotype);
+  const activeThemeClass = getThemeFromPhenotype(currentPhenotype || game.dominantPhenotype);
 
   return (
-    <div className={`min-h-[100dvh] bg-black flex items-center justify-center p-0 md:p-4 transition-all duration-500 ${activeThemeClass}`}>
-      <div className="w-full max-w-7xl h-[100dvh] md:h-[90vh] flex flex-col crt-container glow-border overflow-hidden md:rounded-lg border border-terminal-border bg-terminal-bg">
+    <>
+      <div 
+        className={`min-h-[100dvh] bg-black flex items-center justify-center p-0 md:p-4 transition-all duration-500 ${activeThemeClass} game-root ${isGlitching ? 'glitch-active' : ''}`}
+        data-phenotype={getPhenotypeId(currentPhenotype || game.dominantPhenotype)}
+      >
+        <div className="w-full max-w-7xl h-[100dvh] md:h-[90vh] flex flex-col crt-container glow-border overflow-hidden md:rounded-lg border border-terminal-border bg-terminal-bg">
         {/* CRT Scanline and curvature overlays */}
         <div className="scanline"></div>
         
@@ -117,11 +172,21 @@ export const Game = () => {
         {/* Main Workspace */}
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
           {/* Narrative Terminal screen */}
-          <div className={`flex-1 flex flex-col overflow-hidden min-h-0 ${showStatsMobile ? 'hidden lg:flex' : 'flex'}`}>
+          <div className={`flex-1 flex flex-col overflow-hidden min-h-0 relative ${showStatsMobile ? 'hidden lg:flex' : 'flex'}`}>
+            {(currentPhenotype || game.dominantPhenotype) && (
+              <PhenotypeIcon 
+                phenotype={currentPhenotype || game.dominantPhenotype} 
+                morfologia={game.morfologia} 
+                className="absolute inset-0 m-auto w-3/4 max-w-md h-auto opacity-[0.03] pointer-events-none text-terminal-accent"
+              />
+            )}
             <Terminal 
               textHistory={game.textHistory}
               currentSceneBody={game.sceneData?.body}
               isLoading={game.isLoading}
+              isGlitching={isGlitching}
+              dominantPhenotype={currentPhenotype || game.dominantPhenotype}
+              morfologia={game.morfologia}
             />
           </div>
 
@@ -131,6 +196,7 @@ export const Game = () => {
               genes={game.genes}
               dnaFragments={game.dnaFragments}
               dominantPhenotype={game.dominantPhenotype}
+              isGlitching={isGlitching}
             />
           </div>
         </div>
@@ -225,7 +291,30 @@ export const Game = () => {
           </div>
         </div>
       )}
-    </div>
+
+      {transitionData && (
+        <PhenotypeTransition
+          fenotipoAnterior={transitionData.oldPhenotype}
+          fenotipoNuevo={transitionData.newPhenotype}
+          nombreFenotipo={transitionData.name}
+          onApplyPhenotype={(phenotype) => setCurrentPhenotype(phenotype)}
+          onGlitchStart={() => setIsGlitching(true)}
+          onGlitchEnd={() => setIsGlitching(false)}
+          onComplete={() => setTransitionData(null)}
+        />
+      )}
+
+      {showMorphologyModal && (
+        <MorphologyModal 
+          morfologia={game.morfologia} 
+          dominantPhenotype={game.dominantPhenotype}
+          onSelectOption={(newMorfologia) => {
+            game.updateState({ morfologia: newMorfologia });
+          }} 
+        />
+      )}
+      </div>
+    </>
   );
 };
 

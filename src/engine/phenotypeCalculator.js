@@ -117,3 +117,16 @@ export const getThemeFromPhenotype = (phenotype) => {
   }
   return 'theme-primordial';
 };
+
+/**
+ * Maps a phenotype string to a CSS data-phenotype ID (e.g. "Primordial en Transición" -> "primordial_transicion")
+ */
+export const getPhenotypeId = (phenotype) => {
+  if (!phenotype) return 'primordial_latente';
+  return phenotype
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+    .replace(' en ', ' ') // Handle "Primordial en Transición"
+    .replace(/\s+/g, '_'); // Convert spaces to underscores
+};
+

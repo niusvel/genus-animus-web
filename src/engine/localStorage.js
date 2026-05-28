@@ -15,6 +15,11 @@ export const INITIAL_STATE = {
     collectiveMemory: 0.31,
   },
   inventory: [], // Array of { id, name, equipped }
+  morfologia: {
+    base: null,
+    refuerzo: null,
+    absorcion: 0
+  },
   flags: {}, // Map of flags
   textHistory: [], // Array of { type: 'input'|'output', text: string }
   defeatedEnemies: 0,

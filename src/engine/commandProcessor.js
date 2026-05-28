@@ -1,6 +1,6 @@
 import { loadScene } from './contentLoader.js';
 import { getActiveCommands, getAvailableObjects, evaluateCondition } from './sceneManager.js';
-import { mutateGene, calculatePhenotype, getMutationDetails } from './geneticEngine.js';
+import { mutateGene, calculatePhenotype, getMutationDetails, updateMorphologyState } from './geneticEngine.js';
 import { saveState } from './localStorage.js';
 
 // Command dictionary mapping Spanish verbs to English internal commands
@@ -329,12 +329,31 @@ Usa el comando \`MUTAR [gen]\` (ej: **MUTAR cognicion**) para asimilar la mutaci
 /**
  * Formats character status stats.
  */
-function formatStats(genes, dominantPhenotype) {
+function formatStats(genes, dominantPhenotype, morfologia) {
   const vigor = Math.round((genes.metabolism * 10) * 10) / 10;
   const perception = Math.round((genes.cognition * 10) * 10) / 10;
   const tacticalCohesion = Math.round((genes.cohesion * 10) * 10) / 10;
   const adaptation = Math.round((genes.adaptability * 10) * 10) / 10;
   const integration = Math.round((genes.substrate * 10) * 10) / 10;
+
+  let morfologiaStr = '';
+  if (morfologia && morfologia.ramaBloqueada) {
+    const { partes, refuerzos } = morfologia;
+    const items = [];
+    if (partes.piernas) items.push(`${partes.piernas} Piernas${refuerzos.piernas ? ` (+${refuerzos.piernas} Reforzadas)` : ''}`);
+    if (partes.brazos) items.push(`${partes.brazos} Brazos${refuerzos.brazos ? ` (+${refuerzos.brazos} Reforzados)` : ''}`);
+    if (partes.cuernos) items.push(`${partes.cuernos} Cuernos${refuerzos.cuernos ? ` (+${refuerzos.cuernos} Reforzados)` : ''}`);
+    if (partes.patas) items.push(`${partes.patas} Patas${refuerzos.patas ? ` (+${refuerzos.patas} Reforzadas)` : ''}`);
+    if (partes.alas) items.push(`${partes.alas} Alas${refuerzos.alas ? ` (+${refuerzos.alas} Reforzadas)` : ''}`);
+    if (partes.piel) items.push(`Piel Endurecida${refuerzos.piel ? ` (Reforzada)` : ''}`);
+    if (partes.caparazon) items.push(`Caparazón${refuerzos.caparazon ? ` (Reforzado)` : ''}`);
+    
+    if (items.length > 0) {
+      morfologiaStr = `\n\n**Morfología:**\n- ${items.join('\n- ')}`;
+    } else {
+      morfologiaStr = `\n\n**Morfología:** Ninguna modificación activa.`;
+    }
+  }
 
   return `### **ESTADO**
 **Fenotipo Dominante:** *${dominantPhenotype}*
@@ -345,7 +364,7 @@ function formatStats(genes, dominantPhenotype) {
 | **Percepción** | ${perception} | Cognición |
 | **Cohesión Táctica** | ${tacticalCohesion} | Cohesión |
 | **Adaptación** | ${adaptation} | Adaptabilidad |
-| **Integración** | ${integration} | Sustrato |`;
+| **Integración** | ${integration} | Sustrato |${morfologiaStr}`;
 }
 
 /**
@@ -413,22 +432,7 @@ function processOnlineCommand(command, argInput, state, onlineScene) {
     }
 
     case 'STATUS': {
-      const vigor = Math.round((state.genes.metabolism * 10) * 10) / 10;
-      const perception = Math.round((state.genes.cognition * 10) * 10) / 10;
-      const tacticalCohesion = Math.round((state.genes.cohesion * 10) * 10) / 10;
-      const adaptation = Math.round((state.genes.adaptability * 10) * 10) / 10;
-      const integration = Math.round((state.genes.substrate * 10) * 10) / 10;
-
-      textResult = `### **ESTADO**
-**Fenotipo Dominante:** *${state.dominantPhenotype}*
-
-| Estadística | Valor | Vector Genético |
-| :--- | :---: | :--- |
-| **Vigor** | ${vigor} | Metabolismo |
-| **Percepción** | ${perception} | Cognición |
-| **Cohesión Táctica** | ${tacticalCohesion} | Cohesión |
-| **Adaptación** | ${adaptation} | Adaptabilidad |
-| **Integración** | ${integration} | Sustrato |`;
+      textResult = formatStats(state.genes, state.dominantPhenotype, state.morfologia);
       break;
     }
 
@@ -572,7 +576,7 @@ export function processCommand(inputText, gameState) {
   const argInput = words.slice(1).join(' ');
 
   const command = COMMAND_MAPPING[verbInput];
-  if (!command) {
+  if (!command && verbInput !== 'admin') {
     return {
       text: `No comprendo el verbo "${verbInput}". Escribe AYUDA para ver la lista de comandos disponibles.`,
       newState: null,
@@ -586,6 +590,57 @@ export function processCommand(inputText, gameState) {
   if (!state.inventory) state.inventory = [];
   if (!state.unlocked_desbloqueos) state.unlocked_desbloqueos = [];
   if (!state.scenes) state.scenes = {};
+
+  // Admin Phenotype Command
+  if (verbInput === 'admin' && words[1] === 'phenotype') {
+    const id = parseInt(words[2], 10);
+    if (isNaN(id) || id < 0 || id > 20) {
+      return { text: 'ID inválido. Usa un número del 0 al 20.', newState: null };
+    }
+    
+    // Gene mapping for each phenotype (0-20)
+    const phenoMap = [
+      { c: 0.31, a: 0.31, co: 0.31, m: 0.31, s: 0.31, cm: 0.31 }, // 0: Primordial Latente
+      { c: 0.45, a: 0.45, co: 0.45, m: 0.45, s: 0.31, cm: 0.31 }, // 1: Primordial Despertado
+      { c: 0.48, a: 0.48, co: 0.31, m: 0.31, s: 0.31, cm: 0.31 }, // 2: Primordial en Transicion
+      { c: 0.55, a: 0.55, co: 0.31, m: 0.31, s: 0.31, cm: 0.31 }, // 3: Humanoide Emergente
+      { c: 0.65, a: 0.65, co: 0.31, m: 0.31, s: 0.31, cm: 0.31 }, // 4: Humanoide Consolidado
+      { c: 0.80, a: 0.80, co: 0.31, m: 0.31, s: 0.31, cm: 0.31 }, // 5: Humanoide Avanzado
+      { c: 0.65, a: 0.65, co: 0.50, m: 0.50, s: 0.31, cm: 0.31 }, // 6: Humanoide Adaptado
+      { c: 0.65, a: 0.65, co: 0.31, m: 0.31, s: 0.50, cm: 0.50 }, // 7: Humanoide Integrado
+      { c: 0.65, a: 0.65, co: 0.50, m: 0.50, s: 0.48, cm: 0.48 }, // 8: Humanoide Pleno
+      { c: 0.31, a: 0.31, co: 0.55, m: 0.55, s: 0.31, cm: 0.31 }, // 9: Insectoide Emergente
+      { c: 0.31, a: 0.31, co: 0.65, m: 0.65, s: 0.31, cm: 0.31 }, // 10: Insectoide Consolidado
+      { c: 0.31, a: 0.31, co: 0.80, m: 0.80, s: 0.31, cm: 0.31 }, // 11: Insectoide Avanzado
+      { c: 0.50, a: 0.50, co: 0.65, m: 0.65, s: 0.31, cm: 0.31 }, // 12: Insectoide Pensante
+      { c: 0.31, a: 0.31, co: 0.65, m: 0.65, s: 0.50, cm: 0.50 }, // 13: Insectoide Sintetico
+      { c: 0.50, a: 0.50, co: 0.65, m: 0.65, s: 0.48, cm: 0.48 }, // 14: Insectoide Supremo
+      { c: 0.31, a: 0.31, co: 0.31, m: 0.31, s: 0.55, cm: 0.55 }, // 15: Androide Emergente
+      { c: 0.31, a: 0.31, co: 0.31, m: 0.31, s: 0.65, cm: 0.65 }, // 16: Androide Consolidado
+      { c: 0.31, a: 0.31, co: 0.31, m: 0.31, s: 0.80, cm: 0.80 }, // 17: Androide Avanzado
+      { c: 0.50, a: 0.50, co: 0.31, m: 0.31, s: 0.65, cm: 0.65 }, // 18: Androide Organico
+      { c: 0.31, a: 0.31, co: 0.50, m: 0.50, s: 0.65, cm: 0.65 }, // 19: Androide Enjambre
+      { c: 0.48, a: 0.48, co: 0.50, m: 0.50, s: 0.65, cm: 0.65 }, // 20: Androide Supremo
+    ];
+    
+    const target = phenoMap[id];
+    state.genes.cognition = target.c;
+    state.genes.adaptability = target.a;
+    state.genes.cohesion = target.co;
+    state.genes.metabolism = target.m;
+    state.genes.substrate = target.s;
+    state.genes.collectiveMemory = target.cm;
+    
+    const oldPhenotype = state.dominantPhenotype;
+    state.dominantPhenotype = calculatePhenotype(state.genes);
+    state.morfologia = updateMorphologyState(state.dominantPhenotype, state.morfologia);
+    saveState(state);
+    
+    return {
+      text: `[ADMIN] Fenotipo forzado a ID ${id}: ${state.dominantPhenotype}. Genes ajustados.`,
+      newState: state
+    };
+  }
 
   const sceneId = state.currentScene || 'cueva_capullos';
 
@@ -755,7 +810,7 @@ export function processCommand(inputText, gameState) {
       }
 
       const descText = textKey ? getNarrativeText(scene, textKey, state.dominantPhenotype) : '';
-      const statsBlock = formatStats(state.genes, state.dominantPhenotype);
+      const statsBlock = formatStats(state.genes, state.dominantPhenotype, state.morfologia);
       textResult = descText ? `${descText}\n\n${statsBlock}` : statsBlock;
       break;
     }
@@ -839,6 +894,7 @@ export function processCommand(inputText, gameState) {
         state.genes = result.genes;
         state.dnaFragments -= result.cost;
         state.dominantPhenotype = calculatePhenotype(state.genes);
+        state.morfologia = updateMorphologyState(state.dominantPhenotype, state.morfologia);
 
         const logicBlock = scene.logica_mutacion || {};
         if (logicBlock.flag_que_otorga) {

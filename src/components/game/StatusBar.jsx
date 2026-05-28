@@ -1,6 +1,7 @@
 import React from 'react';
+import GlitchText from './GlitchText';
 
-const StatRow = ({ label, value, geneName }) => {
+const StatRow = ({ label, value, geneName, isGlitching }) => {
   const percentage = Math.round(value * 100);
   
   // Create segment bar representation: [||||||||..........]
@@ -11,18 +12,22 @@ const StatRow = ({ label, value, geneName }) => {
   return (
     <div className="flex flex-col space-y-1 py-1 border-b border-terminal-border/20 last:border-b-0">
       <div className="flex justify-between items-center text-xs md:text-sm">
-        <span className="text-terminal-muted capitalize">{label} <span className="text-[10px] opacity-50">({geneName})</span></span>
+        <span className="text-terminal-text font-bold capitalize">
+          <GlitchText text={label} active={isGlitching} /> <span className="text-[10px] text-terminal-muted ml-1">(<GlitchText text={geneName} active={isGlitching} />)</span>
+        </span>
         <span className="font-bold text-terminal-accent">{value.toFixed(2)}</span>
       </div>
       <div className="flex items-center space-x-2">
-        <span className="font-mono text-xs text-terminal-text tracking-widest">{segments}</span>
+        <span className={`font-mono text-xs text-terminal-text tracking-widest ${isGlitching ? 'jitter-bar inline-block' : ''}`}>
+          {segments}
+        </span>
         <span className="text-[10px] text-terminal-muted">{percentage}%</span>
       </div>
     </div>
   );
 };
 
-export const StatusBar = ({ genes, dnaFragments, dominantPhenotype }) => {
+export const StatusBar = ({ genes, dnaFragments, dominantPhenotype, isGlitching }) => {
   if (!genes) return null;
 
   const { cognition, adaptability, cohesion, metabolism, substrate, collectiveMemory } = genes;
@@ -42,7 +47,7 @@ export const StatusBar = ({ genes, dnaFragments, dominantPhenotype }) => {
       <div className="border border-terminal-border p-3 bg-black/60 rounded glow-border">
         <div className="text-[10px] text-terminal-muted uppercase tracking-wider mb-1">Perfil Fenotípico</div>
         <div className="text-sm md:text-base font-bold text-terminal-accent glow-text tracking-wide uppercase truncate">
-          {dominantPhenotype || 'Latent Primordial'}
+          <GlitchText text={dominantPhenotype || 'Latent Primordial'} active={isGlitching} />
         </div>
       </div>
 
@@ -63,11 +68,11 @@ export const StatusBar = ({ genes, dnaFragments, dominantPhenotype }) => {
           Estadísticas Fisiológicas
         </div>
         <div className="space-y-3">
-          <StatRow label="Vigor" value={metabolism} geneName="metabolismo" />
-          <StatRow label="Percepción" value={cognition} geneName="cognición" />
-          <StatRow label="Cohesión Táctica" value={cohesion} geneName="cohesión" />
-          <StatRow label="Adaptación" value={adaptability} geneName="adaptabilidad" />
-          <StatRow label="Integración" value={substrate} geneName="sustrato" />
+          <StatRow label="Vigor" value={metabolism} geneName="metabolismo" isGlitching={isGlitching} />
+          <StatRow label="Percepción" value={cognition} geneName="cognición" isGlitching={isGlitching} />
+          <StatRow label="Cohesión Táctica" value={cohesion} geneName="cohesión" isGlitching={isGlitching} />
+          <StatRow label="Adaptación" value={adaptability} geneName="adaptabilidad" isGlitching={isGlitching} />
+          <StatRow label="Integración" value={substrate} geneName="sustrato" isGlitching={isGlitching} />
         </div>
       </div>
 
@@ -79,7 +84,7 @@ export const StatusBar = ({ genes, dnaFragments, dominantPhenotype }) => {
         </div>
         <div className="w-full bg-black/40 h-1.5 rounded-full overflow-hidden mt-1.5 border border-terminal-border/30">
           <div 
-            className="bg-terminal-accent h-full shadow-[0_0_8px_var(--color-terminal-accent)] transition-all duration-500"
+            className={`bg-terminal-accent h-full shadow-[0_0_8px_var(--color-terminal-accent)] transition-all duration-500 ${isGlitching ? 'jitter-bar' : ''}`}
             style={{ width: `${collectiveMemory * 100}%` }}
           />
         </div>
