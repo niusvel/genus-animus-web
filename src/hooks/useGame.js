@@ -2,7 +2,10 @@ import { useEffect, useState, useCallback } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { loadScene } from '../engine/contentLoader.js';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Garantiza esquema (http/https) y sin barra final; evita que una env var sin
+// "https://" se interprete como ruta relativa al frontend (404). Ver gameStore.js.
+const RAW_API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').trim().replace(/\/+$/, '');
+const API_URL = /^https?:\/\//i.test(RAW_API_URL) ? RAW_API_URL : `https://${RAW_API_URL}`;
 
 export const useGame = () => {
   const store = useGameStore();
@@ -72,21 +75,21 @@ export const useGame = () => {
           }
         }
         
-        store.updateState({
+        // Read live state (not the render snapshot) so a reset that leaves the
+        // scene unchanged still detects the freshly-cleared, empty history.
+        const liveHistory = useGameStore.getState().textHistory;
+        const updates = {
           activeSceneContent: {
             metadata: scene,
             body: arrivalText
           }
-        });
-        
-        // Only initialize text history with arrival text if it's currently empty
-        if (store.textHistory.length === 0) {
-          store.updateState({
-            textHistory: [
-              { type: 'output', text: arrivalText }
-            ]
-          });
+        };
+        // Only seed the terminal with the arrival text when the history is empty
+        // (first load or after a reset). Navigation appends its own text instead.
+        if (liveHistory.length === 0) {
+          updates.textHistory = [{ type: 'output', text: arrivalText }];
         }
+        store.updateState(updates);
       } catch (err) {
         console.error('Failed to load local scene:', err);
         setError('Error al cargar la escena local.');

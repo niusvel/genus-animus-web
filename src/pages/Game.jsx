@@ -9,6 +9,7 @@ import { getThemeFromPhenotype, getPhenotypeId } from '../engine/phenotypeCalcul
 import PhenotypeTransition from '../components/game/PhenotypeTransition';
 import MorphologyModal from '../components/game/MorphologyModal';
 import PhenotypeIcon from '../components/game/PhenotypeIcon';
+import { INITIAL_STATE } from '../engine/localStorage';
 
 export const Game = () => {
   const game = useGame();
@@ -84,6 +85,18 @@ export const Game = () => {
     });
   };
 
+  const handleReset = () => {
+    if (!window.confirm('¿Deseas reiniciar toda tu evolución local?')) return;
+    game.resetGame();
+    // Snap the UI back to the initial phenotype immediately, without playing the
+    // cinematic transition (a reset is not an evolution).
+    const initialPhenotype = INITIAL_STATE.dominantPhenotype;
+    setTransitionData(null);
+    setIsGlitching(false);
+    setCurrentPhenotype(initialPhenotype);
+    document.documentElement.setAttribute('data-phenotype', getPhenotypeId(initialPhenotype));
+  };
+
   // Intercept and show registration screen if the hero tries to exit cueva or manually loads
   if (game.flags?.triggerRegistration) {
     return (
@@ -128,13 +141,13 @@ export const Game = () => {
                     game.fetchCheckpoints();
                     setShowCheckpointModal(true);
                   }}
-                  className="px-2 py-1 border border-terminal-border hover:border-terminal-accent/50 hover:text-terminal-accent rounded cursor-pointer transition-colors duration-300 mr-2"
+                  className="px-2 py-1 border border-terminal-border text-terminal-text hover:border-terminal-accent/50 hover:text-terminal-accent rounded cursor-pointer transition-colors duration-300 mr-2"
                 >
                   Checkpoints
                 </button>
                 <button
                   onClick={() => game.logout()}
-                  className="px-2 py-1 border border-terminal-border hover:border-red-500/50 hover:text-red-400 rounded cursor-pointer transition-colors duration-300"
+                  className="px-2 py-1 border border-terminal-border text-terminal-text hover:border-red-500/50 hover:text-red-400 rounded cursor-pointer transition-colors duration-300"
                 >
                   Cerrar Sesión
                 </button>
@@ -144,17 +157,13 @@ export const Game = () => {
               <>
                 <button
                   onClick={() => game.updateState({ flags: { ...game.flags, triggerRegistration: true } })}
-                  className="px-2 py-1 border border-terminal-border hover:border-terminal-accent/50 hover:text-terminal-accent rounded cursor-pointer transition-colors duration-300"
+                  className="px-2 py-1 border border-terminal-border text-terminal-text hover:border-terminal-accent/50 hover:text-terminal-accent rounded cursor-pointer transition-colors duration-300"
                 >
                   Cargar Partida
                 </button>
                 <button
-                  onClick={() => {
-                    if (window.confirm('¿Deseas reiniciar toda tu evolución local?')) {
-                      game.resetGame();
-                    }
-                  }}
-                  className="px-2 py-1 border border-terminal-border hover:border-red-500/50 hover:text-red-400 rounded cursor-pointer transition-colors duration-300"
+                  onClick={handleReset}
+                  className="px-2 py-1 border border-terminal-border text-terminal-text hover:border-red-500/50 hover:text-red-400 rounded cursor-pointer transition-colors duration-300"
                 >
                   Reiniciar
                 </button>
@@ -162,7 +171,7 @@ export const Game = () => {
             )}
             <button
               onClick={() => setShowStatsMobile(!showStatsMobile)}
-              className="lg:hidden px-2 py-1 border border-terminal-border hover:border-terminal-accent/50 hover:text-terminal-accent rounded cursor-pointer transition-colors duration-300 text-[10px] md:text-xs"
+              className="lg:hidden px-2 py-1 border border-terminal-border text-terminal-text hover:border-terminal-accent/50 hover:text-terminal-accent rounded cursor-pointer transition-colors duration-300 text-[10px] md:text-xs"
             >
               {showStatsMobile ? 'TERMINAL' : 'ESTADO'}
             </button>

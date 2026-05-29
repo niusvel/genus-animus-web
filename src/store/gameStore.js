@@ -2,8 +2,12 @@ import { create } from 'zustand';
 import { loadState, saveState, clearState, INITIAL_STATE } from '../engine/localStorage.js';
 import { calculatePhenotype, mutateGene } from '../engine/geneticEngine.js';
 
-// API base URL helper
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// API base URL helper.
+// Garantiza que la URL tenga esquema (http/https) y sin barra final. Si la env var
+// se configura sin "https://" (p.ej. "mi-api.up.railway.app"), fetch la trataría como
+// ruta relativa y apuntaría al propio frontend, devolviendo un 404.
+const RAW_API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').trim().replace(/\/+$/, '');
+const API_URL = /^https?:\/\//i.test(RAW_API_URL) ? RAW_API_URL : `https://${RAW_API_URL}`;
 
 const local = loadState();
 
