@@ -376,9 +376,24 @@ function formatStats(genes, dominantPhenotype, morfologia) {
 /**
  * Processes a command in an online scene (Scene 4+) served by the API.
  */
+// Normaliza texto para comparaciones (minúsculas, sin acentos).
+function normalizeText(s) {
+  return (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+}
+
 function processOnlineCommand(command, argInput, state, onlineScene) {
   const commands = onlineScene?.metadata?.commands || onlineScene?.commands || [];
   const mappedVerb = COMMAND_TO_SPANISH_VERB[command];
+
+  // Estructura completa de la escena servida por el backend (definicion + textos).
+  const scene = onlineScene?.metadata || onlineScene || {};
+  const sceneId = state.currentScene;
+  if (!state.scenes) state.scenes = {};
+  if (!state.scenes[sceneId]) {
+    state.scenes[sceneId] = { objetos_tomados: [], objetos_dinamicos: [], conteo_examenes: {} };
+  }
+  const sceneState = state.scenes[sceneId];
+  if (!sceneState.conteo_examenes) sceneState.conteo_examenes = {};
 
   // Normalize commands list for safe checking
   const upperCommands = commands.map(cmd => cmd.toUpperCase());
@@ -419,10 +434,30 @@ function processOnlineCommand(command, argInput, state, onlineScene) {
 
     case 'OBSERVE':
     case 'LISTEN': {
-      textResult = onlineScene?.body || 'No hay descripción disponible.';
+      const logic = command === 'OBSERVE' ? scene.logica_observar : scene.logica_escuchar;
+      const seenKey = command === 'OBSERVE' ? 'observado' : 'escuchado';
+
+      if (logic && scene.textos) {
+        // primera_vez la primera vez que se usa el verbo en esta escena; luego repetido.
+        const firstTime = !sceneState[seenKey];
+        const textKey = firstTime
+          ? (logic.primera_vez || logic.repetido)
+          : (logic.repetido || logic.primera_vez);
+        sceneState[seenKey] = true;
+
+        // Al observar por primera vez se otorgan los flags de la escena (desbloquean IR, etc.).
+        if (command === 'OBSERVE' && firstTime && Array.isArray(scene.flags_que_otorga)) {
+          scene.flags_que_otorga.forEach(f => { state.flags[f] = true; });
+        }
+
+        textResult = getNarrativeText(scene, textKey, state.dominantPhenotype) || onlineScene?.body || '';
+      } else {
+        // Fallback (backend antiguo sin textos divididos).
+        textResult = onlineScene?.body || 'No hay descripción disponible.';
+      }
+
       if (command === 'OBSERVE') {
-        const fullScene = onlineScene?.metadata || onlineScene || {};
-        const availableTakeables = getAvailableObjects(fullScene, state).filter(obj => obj.tomable);
+        const availableTakeables = getAvailableObjects(scene, state).filter(obj => obj.tomable);
         if (availableTakeables.length > 0) {
           const names = availableTakeables.map(o => o.nombre || o.name).join(', ');
           textResult += `\n\nEn el suelo ves: ${names}.`;
@@ -492,18 +527,30 @@ function processOnlineCommand(command, argInput, state, onlineScene) {
       const target = argInput.toLowerCase().trim();
 
       // Try to find the exit dynamically from the salidas array first (handles multi-exit scenes)
-      const salidas = onlineScene?.metadata?.salidas || onlineScene?.salidas || [];
+      const salidas = scene.salidas || [];
       if (salidas.length > 0) {
-        const salida = salidas.find(s => s.palabra_clave.toLowerCase() === target);
+        const salida = salidas.find(s => normalizeText(s.palabra_clave) === normalizeText(target));
         if (!salida) {
           return { text: `No puedes ir hacia "${argInput}".`, newState: null, error: 'invalid_destination' };
+        }
+
+        // Salida bloqueada por un flag que aún no se cumple.
+        if (salida.requiere_flag && !state.flags[salida.requiere_flag]) {
+          const blockedText = salida.texto_bloqueado_id
+            ? getNarrativeText(scene, salida.texto_bloqueado_id, state.dominantPhenotype)
+            : 'Algo te impide ir por ahí todavía.';
+          return { text: blockedText, newState: null, error: 'exit_blocked' };
         }
 
         state.currentScene = salida.destino;
         saveState(state);
 
+        const transitionText = salida.texto_transicion_id
+          ? getNarrativeText(scene, salida.texto_transicion_id, state.dominantPhenotype)
+          : '';
+
         return {
-          text: `Te diriges hacia la siguiente zona: ${target}...`,
+          text: transitionText || `Te diriges hacia ${target}...`,
           newState: state,
           error: null
         };
@@ -548,7 +595,37 @@ function processOnlineCommand(command, argInput, state, onlineScene) {
     }
 
     case 'EXAMINE': {
-      textResult = `Inspeccionas ${argInput}, pero no encuentras nada inusual a simple vista.`;
+      const logic = scene.logica_examinar || {};
+      const objetos = scene.objetos || [];
+
+      if (!argInput) {
+        textResult = '¿Qué quieres examinar? (ej: "examinar árbol")';
+        break;
+      }
+
+      const target = normalizeText(argInput);
+      const obj = objetos.find(o => normalizeText(o.id) === target || normalizeText(o.nombre) === target);
+
+      if (!obj) {
+        textResult = `No ves ningún "${argInput}" que puedas examinar aquí.`;
+        break;
+      }
+
+      const examined = sceneState.conteo_examenes[obj.id] || 0;
+      const usos = (typeof obj.usos_examinar === 'number') ? obj.usos_examinar : 1;
+      const exhausted = examined >= usos;
+
+      // logica_examinar mapea la condición (ej. "arbol_disponible") al id de texto
+      // real en la narrativa (ej. "examinar_arbol").
+      const condKey = exhausted ? `${obj.id}_agotado` : `${obj.id}_disponible`;
+      const textKey = logic[condKey];
+
+      if (!exhausted) {
+        sceneState.conteo_examenes[obj.id] = examined + 1;
+      }
+
+      textResult = getNarrativeText(scene, textKey, state.dominantPhenotype)
+        || `Examinas ${obj.nombre}, pero no encuentras nada nuevo.`;
       break;
     }
 

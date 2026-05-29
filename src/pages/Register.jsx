@@ -143,7 +143,7 @@ export const Register = ({ onComplete, onCancel }) => {
       <div className="w-full max-w-md p-6 border border-terminal-accent bg-terminal-bg rounded shadow-[0_0_20px_var(--color-terminal-glow)] space-y-6">
         <div className="text-center space-y-2">
           {onCancel && (
-            <div className="flex justify-end -mb-4">
+            <div className="flex justify-end">
               <button 
                 onClick={onCancel}
                 className="text-[10px] text-red-400 hover:text-red-300 border border-red-500/30 px-2 py-0.5 rounded cursor-pointer uppercase transition-colors"

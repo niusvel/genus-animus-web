@@ -109,19 +109,27 @@ export const useGame = () => {
         });
         if (res.ok) {
           const data = await res.json();
-          if (data.texto) {
-            // Clear history and initialize with the new scene body
+          const textos = data.textos || {};
+          // Texto de llegada estructurado; cae al blob plano si el backend es antiguo.
+          const arrivalText = textos.llegada || data.texto || '';
+          if (arrivalText) {
+            // Guarda la estructura completa de la escena (salidas, objetos, lógicas,
+            // checkpoint y los textos divididos por bloque) para que el motor del
+            // cliente procese cada comando correctamente.
             store.updateState({
               activeSceneContent: {
                 metadata: {
+                  ...(data.metadata || {}),
                   id: data.id,
                   commands: data.comandos_disponibles,
-                  next: data.siguiente
+                  next: data.siguiente,
+                  checkpoint: data.checkpoint ?? data.metadata?.checkpoint ?? false,
+                  textos
                 },
-                body: data.texto
+                body: arrivalText
               },
               textHistory: [
-                { type: 'output', text: data.texto }
+                { type: 'output', text: arrivalText }
               ]
             });
           } else {
