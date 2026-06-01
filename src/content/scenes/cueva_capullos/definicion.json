@@ -79,16 +79,19 @@
   ],
 
   "logica_observar": {
-    "sin_flag_observing": "observar_sin_examinar",
-    "capullos_no_examinados": "observar_sin_examinar",
-    "capullos_examinados": "observar_todo_examinado",
-    "flag_que_otorga": "observing"
+    "flag_que_otorga": "observing",
+    "casos": [
+      { "si": { "no": { "flag": "cocoons_examined" } }, "texto": "observar_sin_examinar" },
+      { "texto": "observar_todo_examinado" }
+    ]
   },
 
   "logica_escuchar": {
-    "primera_vez": "escuchar_1",
-    "repetido": "escuchar_repetido",
-    "flag_que_otorga": "cocoon_broken"
+    "flag_que_otorga": "cocoon_broken",
+    "casos": [
+      { "si": { "no": { "flag": "cocoon_broken" } }, "texto": "escuchar_1" },
+      { "texto": "escuchar_repetido" }
+    ]
   },
 
   "logica_examinar": {

@@ -2,6 +2,7 @@ import { loadScene } from './contentLoader.js';
 import { getActiveCommands, getAvailableObjects, evaluateCondition } from './sceneManager.js';
 import { mutateGene, calculatePhenotype, getMutationDetails, updateMorphologyState } from './geneticEngine.js';
 import { saveState } from './localStorage.js';
+import { resolverCasos } from './conditions.js';
 
 // Command dictionary mapping Spanish verbs to English internal commands
 export const COMMAND_MAPPING = {
@@ -142,134 +143,6 @@ function getNarrativeText(scene, key, phenotype) {
 }
 
 /**
- * Checks command-specific logic condition.
- */
-function checkCondition(key, state, target) {
-  const flags = state.flags || {};
-  const inventory = state.inventory || [];
-  const normTarget = target ? target.toLowerCase().trim() : '';
-
-  switch (key) {
-    // Escuchar & Defender & Descansar
-    case 'primera_vez':
-      if (state.currentScene === 'cueva_capullos') {
-        return !flags.cocoon_broken;
-      }
-      if (state.currentScene === 'cueva_salida') {
-        return !flags.first_rest_completed;
-      }
-      return !flags.defended_once; // defender in cueva_enemigo
-
-    case 'repetido':
-      if (state.currentScene === 'cueva_capullos') {
-        return !!flags.cocoon_broken;
-      }
-      if (state.currentScene === 'cueva_salida') {
-        return !!flags.first_rest_completed;
-      }
-      return !!flags.defended_once; // defender in cueva_enemigo
-
-    // Observar in cueva_capullos
-    case 'sin_flag_observing':
-      return !flags.observing;
-    case 'capullos_no_examinados':
-      return !flags.cocoons_examined;
-    case 'capullos_examinados':
-      return !!flags.cocoons_examined;
-
-    // Examinar in cueva_capullos
-    case 'capullos_disponible':
-      return (normTarget === 'capullos' || normTarget === 'capullo') && !flags.cocoons_examined;
-    case 'capullos_agotado':
-      return (normTarget === 'capullos' || normTarget === 'capullo') && !!flags.cocoons_examined;
-
-    // Observar in cueva_enemigo
-    case 'enemigo_vivo':
-      return !flags.first_enemy_defeated;
-    case 'cadaver_sin_examinar':
-      return !!flags.first_enemy_defeated && !flags.body_examined;
-    case 'cadaver_examinado_con_objetos': {
-      const hasPezuna = inventory.some(item => item.id === 'pezuna');
-      const hasGanglio = inventory.some(item => item.id === 'ganglio');
-      return !!flags.first_enemy_defeated && !!flags.body_examined && (!hasPezuna || !hasGanglio);
-    }
-    case 'cadaver_examinado_sin_objetos': {
-      const hasPezuna = inventory.some(item => item.id === 'pezuna');
-      const hasGanglio = inventory.some(item => item.id === 'ganglio');
-      return !!flags.first_enemy_defeated && !!flags.body_examined && hasPezuna && hasGanglio;
-    }
-
-    // Escuchar in cueva_enemigo
-    case 'tras_derrota':
-      return !!flags.first_enemy_defeated;
-
-    // Examinar in cueva_enemigo
-    case 'criatura_sin_examinar':
-      return normTarget === 'criatura' && !flags.body_examined;
-    case 'criatura_ya_examinada':
-      return normTarget === 'criatura' && !!flags.body_examined;
-
-    // Tomar in cueva_enemigo
-    case 'pezuna_duplicado':
-      return (normTarget === 'pezuña' || normTarget === 'pezuna') && inventory.some(item => item.id === 'pezuna');
-    case 'pezuna':
-      return (normTarget === 'pezuña' || normTarget === 'pezuna');
-    case 'ganglio':
-      return normTarget === 'ganglio';
-
-    // Soltar in cueva_enemigo
-    case 'ganglio_no_en_inventario':
-      return normTarget === 'ganglio' && !inventory.some(item => item.id === 'ganglio');
-
-    // Observar in cueva_salida
-    case 'antes_descanso':
-      return !flags.first_rest_completed;
-    case 'tras_descanso_sin_mutar':
-      return !!flags.first_rest_completed && !flags.first_mutation_completed;
-    case 'tras_mutar':
-      return !!flags.first_mutation_completed;
-
-    // Escuchar in cueva_salida
-    case 'tras_descanso':
-      return !!flags.first_rest_completed;
-
-    // Estado in cueva_salida
-    case 'tras_descanso_antes_mutar':
-      return !!flags.first_rest_completed && !flags.first_mutation_completed;
-
-    // Investigar in cueva_salida
-    case 'disponible':
-      return state.dnaFragments >= 10;
-    case 'sin_fragmentos':
-      return state.dnaFragments < 10;
-
-    // Mutacion in cueva_salida
-    case 'completada':
-      return !!flags.first_mutation_completed;
-
-    // Cancelar in cueva_salida
-    case 'investigacion':
-      return true;
-
-    // Ir in cueva_salida
-    case 'exterior_antes_descanso':
-      return (normTarget === 'exterior' || normTarget === 'sendero') && !flags.first_rest_completed;
-    case 'exterior_sin_mutar':
-      return (normTarget === 'exterior' || normTarget === 'sendero') && !!flags.first_rest_completed && !flags.first_mutation_completed;
-    case 'exterior':
-      return (normTarget === 'exterior' || normTarget === 'sendero') && !!flags.first_mutation_completed;
-    case 'cueva':
-      return normTarget === 'cueva';
-
-    default:
-      if (key in flags) {
-        return !!flags[key];
-      }
-      return false;
-  }
-}
-
-/**
  * Evaluates scene unlocks and appends narratives.
  */
 function evaluateUnlocks(scene, state, unlockedIds) {
@@ -367,279 +240,19 @@ function formatStats(genes, dominantPhenotype, morfologia) {
 | **Integración** | ${integration} | Sustrato |${morfologiaStr}`;
 }
 
-/**
- * Processes a Spanish input command.
- * @param {string} inputText - User input.
- * @param {Object} gameState - Current state of the game.
- * @returns {Object} { text, newState, error }
- */
-/**
- * Processes a command in an online scene (Scene 4+) served by the API.
- */
-// Normaliza texto para comparaciones (minúsculas, sin acentos).
-function normalizeText(s) {
-  return (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-}
-
-function processOnlineCommand(command, argInput, state, onlineScene) {
-  const commands = onlineScene?.metadata?.commands || onlineScene?.commands || [];
-  const mappedVerb = COMMAND_TO_SPANISH_VERB[command];
-
-  // Estructura completa de la escena servida por el backend (definicion + textos).
-  const scene = onlineScene?.metadata || onlineScene || {};
-  const sceneId = state.currentScene;
-  if (!state.scenes) state.scenes = {};
-  if (!state.scenes[sceneId]) {
-    state.scenes[sceneId] = { objetos_tomados: [], objetos_dinamicos: [], conteo_examenes: {} };
+// Obtiene la escena unificada (definicion + textos) sin importar su origen:
+// del registro local (escenas del prólogo empaquetadas) o del contenido ya
+// descargado del backend (escenas posteriores). El motor es el mismo para ambas.
+function getSceneData(sceneId, gameState) {
+  try {
+    return loadScene(sceneId);
+  } catch (e) {
+    const meta = gameState && gameState.activeSceneContent && gameState.activeSceneContent.metadata;
+    if (meta && (meta.id === sceneId || gameState.currentScene === sceneId)) {
+      return { ...meta, textos: meta.textos || {} };
+    }
+    throw e;
   }
-  const sceneState = state.scenes[sceneId];
-  if (!sceneState.conteo_examenes) sceneState.conteo_examenes = {};
-
-  // Normalize commands list for safe checking
-  const upperCommands = commands.map(cmd => cmd.toUpperCase());
-  const upperCommand = command.toUpperCase();
-  const upperMappedVerb = mappedVerb ? mappedVerb.toUpperCase() : '';
-
-  const isGlobalCommand = ['HELP', 'STATUS', 'INVENTORY', 'FRAGMENTS', 'INVESTIGATE', 'CANCEL', 'SAVE'].includes(upperCommand);
-  const isAllowed = isGlobalCommand || upperCommands.includes(upperCommand) || upperCommands.includes(upperMappedVerb);
-
-  if (!isAllowed) {
-    return {
-      text: `El comando "${mappedVerb || command}" no está disponible en esta zona.`,
-      newState: null,
-      error: 'command_not_available'
-    };
-  }
-
-  let textResult = '';
-
-  switch (command) {
-    case 'HELP': {
-      // Gather allowed commands: scene-specific + global commands
-      const allowedSet = new Set(commands.map(c => c.toUpperCase()));
-      const globalSpanish = ['AYUDA', 'ESTADO', 'INVENTARIO', 'FRAGMENTOS', 'INVESTIGAR', 'CANCELAR', 'GUARDAR'];
-      globalSpanish.forEach(cmd => allowedSet.add(cmd));
-
-      const allowed = Array.from(allowedSet).sort((a, b) => a.localeCompare(b));
-
-      const lines = ['Comandos conocidos en este momento:'];
-      allowed.forEach(cmd => {
-        if (ALL_HELP_COMMANDS[cmd]) {
-          lines.push(`- ${cmd}: ${ALL_HELP_COMMANDS[cmd]}`);
-        }
-      });
-      textResult = lines.join('\n');
-      break;
-    }
-
-    case 'OBSERVE':
-    case 'LISTEN': {
-      const logic = command === 'OBSERVE' ? scene.logica_observar : scene.logica_escuchar;
-      const seenKey = command === 'OBSERVE' ? 'observado' : 'escuchado';
-
-      if (logic && scene.textos) {
-        // primera_vez la primera vez que se usa el verbo en esta escena; luego repetido.
-        const firstTime = !sceneState[seenKey];
-        const textKey = firstTime
-          ? (logic.primera_vez || logic.repetido)
-          : (logic.repetido || logic.primera_vez);
-        sceneState[seenKey] = true;
-
-        // Al observar por primera vez se otorgan los flags de la escena (desbloquean IR, etc.).
-        if (command === 'OBSERVE' && firstTime && Array.isArray(scene.flags_que_otorga)) {
-          scene.flags_que_otorga.forEach(f => { state.flags[f] = true; });
-        }
-
-        textResult = getNarrativeText(scene, textKey, state.dominantPhenotype) || onlineScene?.body || '';
-      } else {
-        // Fallback (backend antiguo sin textos divididos).
-        textResult = onlineScene?.body || 'No hay descripción disponible.';
-      }
-
-      if (command === 'OBSERVE') {
-        const availableTakeables = getAvailableObjects(scene, state).filter(obj => obj.tomable);
-        if (availableTakeables.length > 0) {
-          const names = availableTakeables.map(o => o.nombre || o.name).join(', ');
-          textResult += `\n\nEn el suelo ves: ${names}.`;
-        }
-      }
-      break;
-    }
-
-    case 'STATUS': {
-      textResult = formatStats(state.genes, state.dominantPhenotype, state.morfologia);
-      break;
-    }
-
-    case 'INVENTORY': {
-      if (!state.inventory || state.inventory.length === 0) {
-        textResult = 'Tu inventario está vacío. No llevas ningún objeto físico.';
-      } else {
-        const items = state.inventory.map(item => `- ${item.name}${item.equipped ? ' (Equipado)' : ''}`).join('\n');
-        textResult = `Inventario:\n${items}`;
-      }
-      break;
-    }
-
-    case 'FRAGMENTS': {
-      textResult = `Fragmentos de ADN disponibles: ${state.dnaFragments}`;
-      break;
-    }
-
-    case 'INVESTIGATE': {
-      if (argInput) {
-        const geneMap = {
-          'cognición': 'cognition',
-          'cognicion': 'cognition',
-          'adaptabilidad': 'adaptability',
-          'cohesión': 'cohesion',
-          'cohesion': 'cohesion',
-          'metabolismo': 'metabolism',
-          'sustrato': 'substrate',
-          'memoria_colectiva': 'collectiveMemory',
-          'memoria colectiva': 'collectiveMemory'
-        };
-
-        const geneKey = geneMap[argInput.toLowerCase()];
-        if (!geneKey) {
-          return { text: `No reconozco el vector genético "${argInput}".`, newState: null, error: 'invalid_gene' };
-        }
-
-        return {
-          text: `[Asimilando Mutación...] Iniciando reprogramación del gen de ${argInput}...`,
-          newState: state,
-          asyncAction: { type: 'mutate', gene: geneKey, rawName: argInput }
-        };
-      } else {
-        state.flags.isInvestigating = true;
-        textResult = 'El panel de tu estructura genética se abre ante tu percepción interna.\n' + formatGenesTable(state.genes);
-      }
-      break;
-    }
-
-    case 'CANCEL': {
-      state.flags.isInvestigating = false;
-      textResult = 'Cierras el acceso a tu estructura genética.';
-      break;
-    }
-
-    case 'GO': {
-      const target = argInput.toLowerCase().trim();
-
-      // Try to find the exit dynamically from the salidas array first (handles multi-exit scenes)
-      const salidas = scene.salidas || [];
-      if (salidas.length > 0) {
-        const salida = salidas.find(s => normalizeText(s.palabra_clave) === normalizeText(target));
-        if (!salida) {
-          return { text: `No puedes ir hacia "${argInput}".`, newState: null, error: 'invalid_destination' };
-        }
-
-        // Salida bloqueada por un flag que aún no se cumple.
-        if (salida.requiere_flag && !state.flags[salida.requiere_flag]) {
-          const blockedText = salida.texto_bloqueado_id
-            ? getNarrativeText(scene, salida.texto_bloqueado_id, state.dominantPhenotype)
-            : 'Algo te impide ir por ahí todavía.';
-          return { text: blockedText, newState: null, error: 'exit_blocked' };
-        }
-
-        state.currentScene = salida.destino;
-        saveState(state);
-
-        const transitionText = salida.texto_transicion_id
-          ? getNarrativeText(scene, salida.texto_transicion_id, state.dominantPhenotype)
-          : '';
-
-        return {
-          text: transitionText || `Te diriges hacia ${target}...`,
-          newState: state,
-          error: null
-        };
-      }
-
-      // Fallback: single nextScene
-      const nextScene = onlineScene?.metadata?.next || onlineScene?.next;
-      if (!nextScene) {
-        return { text: 'No hay salidas visibles en esta zona.', newState: null, error: 'no_exit' };
-      }
-
-      const cleanNextName = nextScene.replace(/^\d+_/, '').toLowerCase();
-
-      if (target && target !== cleanNextName && target !== nextScene.toLowerCase()) {
-        return { text: `No puedes ir hacia "${argInput}".`, newState: null, error: 'invalid_destination' };
-      }
-
-      state.currentScene = nextScene;
-      saveState(state);
-
-      return {
-        text: `Te diriges hacia la siguiente zona: ${cleanNextName.replace(/_/g, ' ')}...`,
-        newState: state,
-        error: null
-      };
-    }
-
-    case 'SAVE': {
-      const isCheckpoint = onlineScene?.metadata?.checkpoint || onlineScene?.checkpoint || false;
-      if (!isCheckpoint) {
-        return {
-          text: 'No puedes guardar tu progreso aquí. Busca un punto de control seguro (checkpoint).',
-          newState: null,
-          error: 'no_checkpoint_scene'
-        };
-      }
-      return {
-        text: 'Iniciando guardado de progreso en el servidor...',
-        newState: state,
-        asyncAction: { type: 'save_checkpoint' }
-      };
-    }
-
-    case 'EXAMINE': {
-      const logic = scene.logica_examinar || {};
-      const objetos = scene.objetos || [];
-
-      if (!argInput) {
-        textResult = '¿Qué quieres examinar? (ej: "examinar árbol")';
-        break;
-      }
-
-      const target = normalizeText(argInput);
-      const obj = objetos.find(o => normalizeText(o.id) === target || normalizeText(o.nombre) === target);
-
-      if (!obj) {
-        textResult = `No ves ningún "${argInput}" que puedas examinar aquí.`;
-        break;
-      }
-
-      const examined = sceneState.conteo_examenes[obj.id] || 0;
-      const usos = (typeof obj.usos_examinar === 'number') ? obj.usos_examinar : 1;
-      const exhausted = examined >= usos;
-
-      // logica_examinar mapea la condición (ej. "arbol_disponible") al id de texto
-      // real en la narrativa (ej. "examinar_arbol").
-      const condKey = exhausted ? `${obj.id}_agotado` : `${obj.id}_disponible`;
-      const textKey = logic[condKey];
-
-      if (!exhausted) {
-        sceneState.conteo_examenes[obj.id] = examined + 1;
-      }
-
-      textResult = getNarrativeText(scene, textKey, state.dominantPhenotype)
-        || `Examinas ${obj.nombre}, pero no encuentras nada nuevo.`;
-      break;
-    }
-
-    default: {
-      textResult = `Has ejecutado el comando: ${mappedVerb || command}.`;
-      break;
-    }
-  }
-
-  return {
-    text: textResult,
-    newState: state,
-    error: null
-  };
 }
 
 export function processCommand(inputText, gameState) {
@@ -721,12 +334,6 @@ export function processCommand(inputText, gameState) {
 
   const sceneId = state.currentScene || 'cueva_capullos';
 
-  // Route online scenes to processOnlineCommand
-  const isLocal = ['cueva_capullos', 'cueva_enemigo', 'cueva_salida'].includes(sceneId);
-  if (!isLocal) {
-    return processOnlineCommand(command, argInput, state, gameState.activeSceneContent);
-  }
-
   if (!state.scenes[sceneId]) {
     state.scenes[sceneId] = {
       objetos_tomados: [],
@@ -735,10 +342,11 @@ export function processCommand(inputText, gameState) {
     };
   }
 
-  const scene = loadScene(sceneId);
+  // Escena actual unificada: del registro local o del contenido del backend.
+  const scene = getSceneData(sceneId, gameState);
 
-  // Determine visited scenes in this playthrough
-  const visitedSceneIds = new Set(['cueva_capullos', ...Object.keys(state.scenes)]);
+  // Determine visited scenes in this playthrough (incluida la actual)
+  const visitedSceneIds = new Set(['cueva_capullos', ...Object.keys(state.scenes), sceneId]);
 
   // Check if there is a living enemy in the current scene
   const sceneEnemies = scene.enemigos || [];
@@ -750,13 +358,13 @@ export function processCommand(inputText, gameState) {
     // Restrict strictly to combat commands of the current scene
     getActiveCommands(scene, state).forEach(cmd => enabledCommandsSet.add(cmd));
   } else {
-    // Accumulate the union of all unlocked commands across all visited scenes
+    // Accumulate the union of all unlocked commands across resolvable visited scenes
     visitedSceneIds.forEach(id => {
       try {
-        const s = loadScene(id);
+        const s = getSceneData(id, gameState);
         getActiveCommands(s, state).forEach(cmd => enabledCommandsSet.add(cmd));
-      } catch (e) {
-        // Ignore scene load errors
+      } catch {
+        // Ignore scenes we can't resolve (e.g. online scenes not currently loaded)
       }
     });
   }
@@ -802,15 +410,7 @@ export function processCommand(inputText, gameState) {
   switch (command) {
     case 'OBSERVE': {
       const logicBlock = scene.logica_observar || {};
-      let textKey = null;
-
-      for (const [condKey, value] of Object.entries(logicBlock)) {
-        if (condKey === 'flag_que_otorga') continue;
-        if (checkCondition(condKey, state, argInput)) {
-          textKey = value;
-          break;
-        }
-      }
+      const textKey = resolverCasos(logicBlock, state, argInput);
 
       if (textKey) {
         textResult = getNarrativeText(scene, textKey, state.dominantPhenotype);
@@ -875,16 +475,7 @@ export function processCommand(inputText, gameState) {
 
     case 'STATUS': {
       const logicBlock = scene.logica_estado || {};
-      let textKey = null;
-
-      // Find first condition that is met
-      for (const [condKey, value] of Object.entries(logicBlock)) {
-        if (condKey === 'flag_que_otorga') continue;
-        if (checkCondition(condKey, state, argInput)) {
-          textKey = value;
-          break;
-        }
-      }
+      const textKey = resolverCasos(logicBlock, state, argInput);
 
       const descText = textKey ? getNarrativeText(scene, textKey, state.dominantPhenotype) : '';
       const statsBlock = formatStats(state.genes, state.dominantPhenotype, state.morfologia);
@@ -894,15 +485,7 @@ export function processCommand(inputText, gameState) {
 
     case 'REST': {
       const logicBlock = scene.logica_descansar || {};
-      let textKey = null;
-
-      for (const [condKey, value] of Object.entries(logicBlock)) {
-        if (condKey === 'flag_que_otorga') continue;
-        if (checkCondition(condKey, state, argInput)) {
-          textKey = value;
-          break;
-        }
-      }
+      const textKey = resolverCasos(logicBlock, state, argInput);
 
       if (textKey) {
         textResult = getNarrativeText(scene, textKey, state.dominantPhenotype);
@@ -917,15 +500,7 @@ export function processCommand(inputText, gameState) {
 
     case 'CANCEL': {
       const logicBlock = scene.logica_cancelar || {};
-      let textKey = null;
-
-      for (const [condKey, value] of Object.entries(logicBlock)) {
-        if (condKey === 'flag_que_otorga') continue;
-        if (checkCondition(condKey, state, argInput)) {
-          textKey = value;
-          break;
-        }
-      }
+      const textKey = resolverCasos(logicBlock, state, argInput);
 
       if (textKey) {
         textResult = getNarrativeText(scene, textKey, state.dominantPhenotype);
@@ -957,7 +532,17 @@ export function processCommand(inputText, gameState) {
           return { text: `No reconozco el vector genético "${argInput}".`, newState: null, error: 'invalid_gene' };
         }
 
-        // Apply mutation
+        // Online (autenticado): la mutación es autoritativa en el servidor; se
+        // resuelve mediante una acción asíncrona (useCommands llama a la API).
+        if (state.token) {
+          return {
+            text: `[Asimilando Mutación...] Iniciando reprogramación del gen de ${argInput}...`,
+            newState: state,
+            asyncAction: { type: 'mutate', gene: geneKey, rawName: argInput }
+          };
+        }
+
+        // Offline (prólogo, sin registro): la mutación se aplica localmente.
         const result = mutateGene(state.genes, geneKey, state.dnaFragments);
         if (result.error) {
           let errorText = `No puedes realizar esa mutación: `;
@@ -982,15 +567,7 @@ export function processCommand(inputText, gameState) {
       } else {
         // Just investigating panel availability
         const logicBlock = scene.logica_investigar || {};
-        let textKey = null;
-
-        for (const [condKey, value] of Object.entries(logicBlock)) {
-          if (condKey === 'flag_que_otorga') continue;
-          if (checkCondition(condKey, state, argInput)) {
-            textKey = value;
-            break;
-          }
-        }
+        const textKey = resolverCasos(logicBlock, state, argInput);
 
         if (textKey) {
           textResult = getNarrativeText(scene, textKey, state.dominantPhenotype);
@@ -1008,15 +585,7 @@ export function processCommand(inputText, gameState) {
 
     case 'DEFEND': {
       const logicBlock = scene.logica_defender || {};
-      let textKey = null;
-
-      for (const [condKey, value] of Object.entries(logicBlock)) {
-        if (condKey === 'flag_que_otorga') continue;
-        if (checkCondition(condKey, state, argInput)) {
-          textKey = value;
-          break;
-        }
-      }
+      const textKey = resolverCasos(logicBlock, state, argInput);
 
       if (textKey) {
         textResult = getNarrativeText(scene, textKey, state.dominantPhenotype);
@@ -1091,16 +660,9 @@ export function processCommand(inputText, gameState) {
       // Check requires flag
       const isBlocked = salida.requiere_flag && !state.flags[salida.requiere_flag];
       if (isBlocked) {
-        // Resolve blocked text
-        let blockedTextId = salida.texto_bloqueado_id;
-        if (scene.id === 'cueva_salida' && (target === 'exterior' || target === 'sendero')) {
-          if (!state.flags.first_rest_completed) {
-            blockedTextId = salida.texto_bloqueado_antes_descanso_id;
-          } else if (!state.flags.first_mutation_completed) {
-            blockedTextId = salida.texto_bloqueado_sin_mutar_id;
-          }
-        }
-
+        // Texto de bloqueo: primero la lista declarativa `bloqueos` (primer caso que
+        // se cumple); si no hay, el `texto_bloqueado_id` por defecto.
+        const blockedTextId = resolverCasos({ casos: salida.bloqueos }, state, target) || salida.texto_bloqueado_id;
         return {
           text: getNarrativeText(scene, blockedTextId, state.dominantPhenotype),
           newState: null,
@@ -1163,14 +725,7 @@ export function processCommand(inputText, gameState) {
       let arrivalText = '';
       if (salida.destino === 'cueva_enemigo' && state.flags.first_enemy_defeated) {
         const logicBlock = destScene.logica_observar || {};
-        let textKey = null;
-        for (const [condKey, value] of Object.entries(logicBlock)) {
-          if (condKey === 'flag_que_otorga') continue;
-          if (checkCondition(condKey, state, '')) {
-            textKey = value;
-            break;
-          }
-        }
+        const textKey = resolverCasos(logicBlock, state, '');
         arrivalText = textKey ? getNarrativeText(destScene, textKey, state.dominantPhenotype) : '';
       } else {
         const entry = (destScene.entradas || []).find(e => e.origen === scene.id);
@@ -1206,40 +761,34 @@ export function processCommand(inputText, gameState) {
         return { text: `No ves ningún "${argInput}" para examinar aquí.`, newState: null, error: 'object_not_found' };
       }
 
-      const spanishVerb = COMMAND_TO_SPANISH_VERB[command] || 'examinar';
-      const logicBlock = scene[`logica_${spanishVerb}`] || {};
-      let textKey = null;
+      const logicBlock = scene.logica_examinar || {};
 
-      // Check conditions
-      for (const [condKey, value] of Object.entries(logicBlock)) {
-        if (condKey === 'flag_que_otorga') continue;
-        if (checkCondition(condKey, state, target)) {
-          textKey = value;
-          break;
-        }
+      // Estado de exámenes por escena (objetos ya inspeccionados).
+      if (!state.scenes[sceneId].objetos_examinados) {
+        state.scenes[sceneId].objetos_examinados = [];
       }
+      const yaExaminado = state.scenes[sceneId].objetos_examinados.includes(targetObj.id);
+
+      // Resolución por objeto: <id>_disponible / <id>_agotado.
+      const textKey = yaExaminado
+        ? logicBlock[`${targetObj.id}_agotado`]
+        : logicBlock[`${targetObj.id}_disponible`];
 
       if (textKey) {
         textResult = getNarrativeText(scene, textKey, state.dominantPhenotype);
+      } else {
+        textResult = targetObj.descripcion_corta || `Es un objeto: ${targetObj.nombre}.`;
+      }
 
-        if (!state.scenes[sceneId].objetos_examinados) {
-          state.scenes[sceneId].objetos_examinados = [];
+      // Primera vez: recompensa de fragmentos y flag de la lógica.
+      if (!yaExaminado) {
+        if (targetObj.fragmentos_adn) {
+          state.dnaFragments += targetObj.fragmentos_adn;
         }
-
-        // Apply flags_que_otorga or specific object rewards
-        if (!state.scenes[sceneId].objetos_examinados.includes(targetObj.id)) {
-          // If the object gives DNA fragments, reward them on examine
-          if (targetObj.fragmentos_adn && !state.flags[logicBlock.flag_que_otorga]) {
-            state.dnaFragments += targetObj.fragmentos_adn;
-          }
-          state.scenes[sceneId].objetos_examinados.push(targetObj.id);
-        }
-
         if (logicBlock.flag_que_otorga) {
           state.flags[logicBlock.flag_que_otorga] = true;
         }
-      } else {
-        textResult = targetObj.descripcion_corta || `Es un objeto: ${targetObj.nombre}.`;
+        state.scenes[sceneId].objetos_examinados.push(targetObj.id);
       }
       break;
     }
@@ -1368,15 +917,7 @@ export function processCommand(inputText, gameState) {
       // Fallback evaluation for general logic_[comando] blocks
       const spanishVerb = COMMAND_TO_SPANISH_VERB[command] || command.toLowerCase();
       const logicBlock = scene[`logica_${spanishVerb}`] || {};
-      let textKey = null;
-
-      for (const [condKey, value] of Object.entries(logicBlock)) {
-        if (condKey === 'flag_que_otorga') continue;
-        if (checkCondition(condKey, state, argInput)) {
-          textKey = value;
-          break;
-        }
-      }
+      const textKey = resolverCasos(logicBlock, state, argInput);
 
       if (textKey) {
         textResult = getNarrativeText(scene, textKey, state.dominantPhenotype);

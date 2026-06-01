@@ -24,13 +24,43 @@ SCENES.forEach(id => {
   registerScene(id, narrative, definition);
 });
 
-// Register mock scene for bosque_amanecer to allow exit transition test
-registerScene('bosque_amanecer', '<!-- llegada -->\nLlegada al exterior.', {
+// Register a representative online-style scene (bosque_amanecer) to exercise the
+// unified data-driven engine: casos declarativos, EXAMINAR por conteo y GUARDAR.
+const bosqueNarrative = [
+  '<!-- llegada -->', 'Llegada al exterior.',
+  '<!-- observar_1 -->', 'Observas el bosque por primera vez.',
+  '<!-- observar_repetido -->', 'El bosque sigue igual.',
+  '<!-- examinar_arbol -->', 'Examinas el arbol con detalle.',
+  '<!-- examinar_arbol_agotado -->', 'Ya examinaste el arbol.'
+].join('\n');
+
+registerScene('bosque_amanecer', bosqueNarrative, {
   id: 'bosque_amanecer',
   nombre: 'El Bosque del Amanecer',
+  checkpoint: true,
+  flags_que_otorga: ['bosque_amanecer_visitado'],
+  comandos_iniciales: ['OBSERVAR', 'EXAMINAR', 'AYUDA'],
+  comandos_desbloqueables: ['IR'],
+  objetos: [
+    { id: 'arbol', nombre: 'arbol', descripcion_corta: 'un arbol enorme', tomable: false, examinable: true, usos_examinar: 1, visible_desde_inicio: true }
+  ],
+  desbloqueos: [
+    { id: 'desbloqueo_ir', condicion: { tipo: 'flag', flag: 'bosque_amanecer_visitado' }, desbloquea_comandos: ['IR'], se_repite: false }
+  ],
   entradas: [
     { origen: 'cueva_salida', texto_llegada_id: 'llegada' }
-  ]
+  ],
+  logica_observar: {
+    flag_que_otorga: 'bosque_amanecer_visitado',
+    casos: [
+      { si: { no: { flag: 'bosque_amanecer_visitado' } }, texto: 'observar_1' },
+      { texto: 'observar_repetido' }
+    ]
+  },
+  logica_examinar: {
+    arbol_disponible: 'examinar_arbol',
+    arbol_agotado: 'examinar_arbol_agotado'
+  }
 });
 
 // Import command processor and local storage INITIAL_STATE
@@ -218,6 +248,37 @@ async function runTests() {
   // Try going to exterior again (should now be unlocked!)
   res = processCommand('IR sendero', state);
   assert(res.newState.currentScene === 'bosque_amanecer', 'Player successfully exits the cave to bosque_amanecer!');
+  state = res.newState;
+
+  // --- ONLINE SCENE: unified data-driven engine on bosque_amanecer ---
+
+  // CASE 11: First OBSERVAR resolves observar_1 (casos) and grants the visited flag.
+  res = processCommand('OBSERVAR', state);
+  assert(res.text.includes('Observas el bosque por primera vez'), 'First OBSERVAR in bosque returns observar_1 (casos)');
+  assert(res.newState.flags.bosque_amanecer_visitado === true, 'OBSERVAR grants bosque_amanecer_visitado');
+  state = res.newState;
+
+  // CASE 12: Second OBSERVAR resolves observar_repetido.
+  res = processCommand('OBSERVAR', state);
+  assert(res.text.includes('El bosque sigue igual'), 'Second OBSERVAR in bosque returns observar_repetido');
+  state = res.newState;
+
+  // CASE 13: EXAMINAR arbol (count-based) returns examinar_arbol the first time.
+  res = processCommand('EXAMINAR arbol', state);
+  assert(res.text.includes('Examinas el arbol con detalle'), 'First EXAMINAR arbol returns examinar_arbol');
+  state = res.newState;
+
+  // CASE 14: Second EXAMINAR arbol returns the exhausted text.
+  res = processCommand('EXAMINAR arbol', state);
+  assert(res.text.includes('Ya examinaste el arbol'), 'Second EXAMINAR arbol returns examinar_arbol_agotado');
+  state = res.newState;
+
+  // CASE 15: GUARDAR in a checkpoint scene (authenticated) triggers the save action.
+  res = processCommand('GUARDAR', state);
+  assert(
+    res.asyncAction && res.asyncAction.type === 'save_checkpoint',
+    'GUARDAR in bosque (checkpoint scene) triggers save_checkpoint'
+  );
 
   console.log('\n--- TEST RUN RESULTS ---');
   console.log(`Passed: ${passedCount}`);

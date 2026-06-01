@@ -118,25 +118,31 @@
   ],
 
   "logica_observar": {
-    "enemigo_vivo": "observar_enemigo_vivo",
-    "cadaver_sin_examinar": "observar_cadaver_sin_examinar",
-    "cadaver_examinado_con_objetos": "observar_cadaver_examinado_con_objetos",
-    "cadaver_examinado_sin_objetos": "observar_cadaver_examinado_sin_objetos"
+    "casos": [
+      { "si": { "no": { "flag": "first_enemy_defeated" } }, "texto": "observar_enemigo_vivo" },
+      { "si": { "no": { "flag": "body_examined" } }, "texto": "observar_cadaver_sin_examinar" },
+      { "si": { "o": [ { "no": { "inventario_tiene": "pezuna" } }, { "no": { "inventario_tiene": "ganglio" } } ] }, "texto": "observar_cadaver_examinado_con_objetos" },
+      { "texto": "observar_cadaver_examinado_sin_objetos" }
+    ]
   },
 
   "logica_escuchar": {
-    "enemigo_vivo": "escuchar_enemigo_vivo",
-    "tras_derrota": "escuchar_tras_derrota"
+    "casos": [
+      { "si": { "no": { "flag": "first_enemy_defeated" } }, "texto": "escuchar_enemigo_vivo" },
+      { "texto": "escuchar_tras_derrota" }
+    ]
   },
 
   "logica_defender": {
-    "primera_vez": "defender_1",
-    "repetido": "defender_repetido"
+    "casos": [
+      { "si": { "no": { "flag": "defended_once" } }, "texto": "defender_1" },
+      { "texto": "defender_repetido" }
+    ]
   },
 
   "logica_examinar": {
-    "criatura_sin_examinar": "examinar_criatura_sin_examinar",
-    "criatura_ya_examinada": "examinar_criatura_ya_examinada",
+    "criatura_disponible": "examinar_criatura_sin_examinar",
+    "criatura_agotado": "examinar_criatura_ya_examinada",
     "flag_que_otorga": "body_examined"
   },
 
