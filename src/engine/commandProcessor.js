@@ -763,11 +763,12 @@ export function processCommand(inputText, gameState) {
 
       const logicBlock = scene.logica_examinar || {};
 
-      // Estado de exámenes por escena (objetos ya inspeccionados).
-      if (!state.scenes[sceneId].objetos_examinados) {
-        state.scenes[sceneId].objetos_examinados = [];
-      }
-      const yaExaminado = state.scenes[sceneId].objetos_examinados.includes(targetObj.id);
+      // "Ya examinado" se guarda como flag persistente por objeto. A diferencia del
+      // estado por escena (efímero, se pierde al recargar), las flags se persisten en
+      // localStorage y se sincronizan con el servidor, así que la recompensa de
+      // fragmentos se concede una sola vez aunque el jugador salga/entre o recargue.
+      const flagExaminado = `examinado_${sceneId}_${targetObj.id}`;
+      const yaExaminado = !!state.flags[flagExaminado];
 
       // Resolución por objeto: <id>_disponible / <id>_agotado.
       const textKey = yaExaminado
@@ -780,7 +781,7 @@ export function processCommand(inputText, gameState) {
         textResult = targetObj.descripcion_corta || `Es un objeto: ${targetObj.nombre}.`;
       }
 
-      // Primera vez: recompensa de fragmentos y flag de la lógica.
+      // Primera vez: recompensa de fragmentos y flags. Marca la flag persistente.
       if (!yaExaminado) {
         if (targetObj.fragmentos_adn) {
           state.dnaFragments += targetObj.fragmentos_adn;
@@ -788,7 +789,7 @@ export function processCommand(inputText, gameState) {
         if (logicBlock.flag_que_otorga) {
           state.flags[logicBlock.flag_que_otorga] = true;
         }
-        state.scenes[sceneId].objetos_examinados.push(targetObj.id);
+        state.flags[flagExaminado] = true;
       }
       break;
     }
