@@ -62,8 +62,10 @@
       "palabra_clave": "sendero",
       "destino": "bosque_amanecer",
       "requiere_flag": "first_mutation_completed",
-      "texto_bloqueado_antes_descanso_id": "ir_sendero_bloqueado_antes_descanso",
-      "texto_bloqueado_sin_mutar_id": "ir_sendero_bloqueado_sin_mutar",
+      "bloqueos": [
+        { "si": { "no": { "flag": "first_rest_completed" } }, "texto": "ir_sendero_bloqueado_antes_descanso" },
+        { "si": { "no": { "flag": "first_mutation_completed" } }, "texto": "ir_sendero_bloqueado_sin_mutar" }
+      ],
       "texto_transicion_id": "ir_sendero"
     },
     {
@@ -87,37 +89,42 @@
     }
   ],
   "logica_descansar": {
-    "primera_vez": "descansar_1",
-    "repetido": "descansar_repetido",
-    "flag_que_otorga": "first_rest_completed"
+    "flag_que_otorga": "first_rest_completed",
+    "casos": [
+      { "si": { "no": { "flag": "first_rest_completed" } }, "texto": "descansar_1" },
+      { "texto": "descansar_repetido" }
+    ]
   },
   "logica_observar": {
-    "antes_descanso": "observar_antes_descanso",
-    "tras_descanso_sin_mutar": "observar_tras_descanso_sin_mutar",
-    "tras_mutar": "observar_tras_mutar"
+    "casos": [
+      { "si": { "no": { "flag": "first_rest_completed" } }, "texto": "observar_antes_descanso" },
+      { "si": { "no": { "flag": "first_mutation_completed" } }, "texto": "observar_tras_descanso_sin_mutar" },
+      { "texto": "observar_tras_mutar" }
+    ]
   },
   "logica_escuchar": {
-    "antes_descanso": "escuchar_antes_descanso",
-    "tras_descanso": "escuchar_tras_descanso"
+    "casos": [
+      { "si": { "no": { "flag": "first_rest_completed" } }, "texto": "escuchar_antes_descanso" },
+      { "texto": "escuchar_tras_descanso" }
+    ]
   },
   "logica_estado": {
-    "tras_descanso_antes_mutar": "estado_tras_descanso"
+    "casos": [
+      { "si": { "y": [ { "flag": "first_rest_completed" }, { "no": { "flag": "first_mutation_completed" } } ] }, "texto": "estado_tras_descanso" }
+    ]
   },
   "logica_investigar": {
-    "disponible": "investigar_disponible",
-    "sin_fragmentos": "investigar_sin_fragmentos"
+    "casos": [
+      { "si": { "fragmentos_min": 10 }, "texto": "investigar_disponible" },
+      { "texto": "investigar_sin_fragmentos" }
+    ]
   },
   "logica_mutacion": {
-    "completada": "mutacion_completada",
     "flag_que_otorga": "first_mutation_completed"
   },
   "logica_cancelar": {
-    "investigacion": "cancelar_investigacion"
-  },
-  "logica_ir": {
-    "exterior_antes_descanso": "ir_exterior_bloqueado_antes_descanso",
-    "exterior_sin_mutar": "ir_exterior_bloqueado_sin_mutar",
-    "exterior": "ir_exterior",
-    "cueva": "ir_cueva"
+    "casos": [
+      { "texto": "cancelar_investigacion" }
+    ]
   }
 }
