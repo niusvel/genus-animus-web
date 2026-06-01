@@ -73,6 +73,7 @@ export const useGameStore = create((set, get) => ({
             },
             inventory: serverState.inventario || [],
             flags: serverState.flags || {},
+            morfologia: serverState.morfologia || null,
             defeatedEnemies: serverState.enemigos_derrotados || 1,
             // Keep text history local
             textHistory: [
