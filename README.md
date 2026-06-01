@@ -79,9 +79,9 @@ JSON decide *qué* bloque mostrar y el Markdown aporta *el texto*.
 - **Fase autenticada** (escenas posteriores): el backend sirve el contenido y
   valida el acceso; el estado se persiste en el servidor (JWT).
 
-## Herramientas de autoría de paletas
+## Paletas por fenotipo
 
-`palettes.css`, `parse_palettes.py` y `update_global_css.py` son utilidades de
-autoría (no forman parte del bundle): regeneran la sección de paletas de
-`src/styles/global.css` a partir del anexo de diseño `docs/genus-animus-paletas.md`.
-No se ejecutan en build ni en runtime.
+Las paletas de color y los temas CRT por fenotipo se definen **directamente** en
+`src/styles/global.css` (variables `--ga-*` y selectores `[data-phenotype^="..."]`).
+El anexo de diseño `docs/genus-animus-paletas.md` sirve como referencia de los
+colores; los cambios se aplican editando `global.css` a mano.
